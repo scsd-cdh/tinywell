@@ -20,15 +20,15 @@ impl MicroWell {
         // Choose color based on hover state
         let fill_color = if response.hovered() {
             if self.led_on {
-                COLOR_SKY_400
+                COLOR_BLUE_300
             } else {
-                COLOR_SLATE_400
+                COLOR_SLATE_500
             }
         } else {
             if self.led_on {
-                COLOR_SKY_500
+                COLOR_BLUE_400
             } else {
-                COLOR_SLATE_500
+                COLOR_SLATE_600
             }
         };
 

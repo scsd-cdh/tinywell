@@ -6,8 +6,9 @@ use crate::colors::*;
 use crate::microwell::MicroWell;
 use crate::serial::Serial;
 
-pub const BOX_SIDE: f32 = 40.0;
+pub const BOX_SIDE: f32 = 50.0;
 pub const CELL_RADIUS: f32 = BOX_SIDE * 0.4;
+pub const CELL_SPACING: f32 = 40.0;
 pub const MICRO_WELL_NUM: f32 = 5.0;
 
 mod colors;
@@ -24,10 +25,8 @@ impl Application {
         cc.egui_ctx.set_pixels_per_point(1.5);
         // Get a mutable reference to the eGUI context's style
         let mut style: egui::Style = (*cc.egui_ctx.style()).clone();
-
-        style.visuals.window_fill = COLOR_SLATE_700;
-        style.visuals.panel_fill = COLOR_SLATE_700;
         style.visuals.override_text_color = Some(COLOR_SLATE_100);
+
         cc.egui_ctx.set_style(style);
 
         Self {
@@ -46,9 +45,6 @@ impl Application {
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let circle_radius = 20.0;
-            let circle_spacing = 50.0;
-
             self.serial.show(ctx, ui);
 
             for row in 0..MICRO_WELL_NUM as i32 {
@@ -58,14 +54,14 @@ impl eframe::App for Application {
 
                         // Add spacing between circles in the same row
                         if col < MICRO_WELL_NUM as i32 - 1 {
-                            ui.add_space(circle_spacing - circle_radius * 2.0);
+                            ui.add_space(CELL_SPACING - CELL_RADIUS * 2.0);
                         }
                     }
                 });
 
                 // Add spacing between rows
                 if row < MICRO_WELL_NUM as i32 - 1 {
-                    ui.add_space(circle_spacing - circle_radius * 2.0);
+                    ui.add_space(CELL_SPACING - CELL_RADIUS * 2.0);
                 }
             }
         });

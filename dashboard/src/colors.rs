@@ -1,5 +1,6 @@
 use crate::Color32;
 
+pub const COLOR_WHITE: Color32 = Color32::WHITE;
 pub const COLOR_SLATE_50: Color32 = Color32::from_rgb(248, 250, 252);
 pub const COLOR_SLATE_100: Color32 = Color32::from_rgb(241, 245, 249);
 pub const COLOR_SLATE_200: Color32 = Color32::from_rgb(226, 232, 240);
@@ -34,3 +35,15 @@ pub const COLOR_SKY_700: Color32 = Color32::from_rgb(3, 105, 161);
 pub const COLOR_SKY_800: Color32 = Color32::from_rgb(7, 89, 133);
 pub const COLOR_SKY_900: Color32 = Color32::from_rgb(12, 74, 110);
 pub const COLOR_SKY_950: Color32 = Color32::from_rgb(8, 47, 73);
+
+pub const COLOR_ROSE_50: Color32 = Color32::from_rgb(255, 241, 242);
+pub const COLOR_ROSE_100: Color32 = Color32::from_rgb(255, 228, 230);
+pub const COLOR_ROSE_200: Color32 = Color32::from_rgb(254, 205, 211);
+pub const COLOR_ROSE_300: Color32 = Color32::from_rgb(253, 164, 175);
+pub const COLOR_ROSE_400: Color32 = Color32::from_rgb(251, 113, 133);
+pub const COLOR_ROSE_500: Color32 = Color32::from_rgb(244, 63, 94);
+pub const COLOR_ROSE_600: Color32 = Color32::from_rgb(225, 29, 72);
+pub const COLOR_ROSE_700: Color32 = Color32::from_rgb(190, 18, 60);
+pub const COLOR_ROSE_800: Color32 = Color32::from_rgb(159, 18, 57);
+pub const COLOR_ROSE_900: Color32 = Color32::from_rgb(136, 19, 55);
+pub const COLOR_ROSE_950: Color32 = Color32::from_rgb(76, 5, 25);
