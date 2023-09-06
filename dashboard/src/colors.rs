@@ -1,0 +1,36 @@
+use crate::Color32;
+
+pub const COLOR_SLATE_50: Color32 = Color32::from_rgb(248, 250, 252);
+pub const COLOR_SLATE_100: Color32 = Color32::from_rgb(241, 245, 249);
+pub const COLOR_SLATE_200: Color32 = Color32::from_rgb(226, 232, 240);
+pub const COLOR_SLATE_300: Color32 = Color32::from_rgb(203, 213, 225);
+pub const COLOR_SLATE_400: Color32 = Color32::from_rgb(148, 163, 184);
+pub const COLOR_SLATE_500: Color32 = Color32::from_rgb(100, 116, 139);
+pub const COLOR_SLATE_600: Color32 = Color32::from_rgb(71, 85, 105);
+pub const COLOR_SLATE_700: Color32 = Color32::from_rgb(51, 65, 85);
+pub const COLOR_SLATE_800: Color32 = Color32::from_rgb(30, 41, 59);
+pub const COLOR_SLATE_900: Color32 = Color32::from_rgb(15, 23, 42);
+pub const COLOR_SLATE_950: Color32 = Color32::from_rgb(2, 6, 23);
+
+pub const COLOR_BLUE_50: Color32 = Color32::from_rgb(239, 246, 255);
+pub const COLOR_BLUE_100: Color32 = Color32::from_rgb(219, 234, 254);
+pub const COLOR_BLUE_200: Color32 = Color32::from_rgb(191, 219, 254);
+pub const COLOR_BLUE_300: Color32 = Color32::from_rgb(147, 197, 253);
+pub const COLOR_BLUE_400: Color32 = Color32::from_rgb(96, 165, 250);
+pub const COLOR_BLUE_500: Color32 = Color32::from_rgb(59, 130, 246);
+pub const COLOR_BLUE_600: Color32 = Color32::from_rgb(37, 99, 235);
+pub const COLOR_BLUE_700: Color32 = Color32::from_rgb(29, 78, 216);
+pub const COLOR_BLUE_800: Color32 = Color32::from_rgb(30, 64, 175);
+pub const COLOR_BLUE_900: Color32 = Color32::from_rgb(30, 58, 138);
+pub const COLOR_BLUE_950: Color32 = Color32::from_rgb(23, 37, 84);
+pub const COLOR_SKY_50: Color32 = Color32::from_rgb(240, 249, 255);
+pub const COLOR_SKY_100: Color32 = Color32::from_rgb(224, 242, 254);
+pub const COLOR_SKY_200: Color32 = Color32::from_rgb(186, 230, 253);
+pub const COLOR_SKY_300: Color32 = Color32::from_rgb(125, 211, 252);
+pub const COLOR_SKY_400: Color32 = Color32::from_rgb(56, 189, 248);
+pub const COLOR_SKY_500: Color32 = Color32::from_rgb(14, 165, 233);
+pub const COLOR_SKY_600: Color32 = Color32::from_rgb(2, 132, 199);
+pub const COLOR_SKY_700: Color32 = Color32::from_rgb(3, 105, 161);
+pub const COLOR_SKY_800: Color32 = Color32::from_rgb(7, 89, 133);
+pub const COLOR_SKY_900: Color32 = Color32::from_rgb(12, 74, 110);
+pub const COLOR_SKY_950: Color32 = Color32::from_rgb(8, 47, 73);
