@@ -3,11 +3,62 @@ use eframe::egui::{Align2, Color32, Pos2, Sense, Stroke, TextStyle, Ui};
 use crate::{BOX_SIDE, CELL_RADIUS};
 use crate::colors::*;
 
+#[derive(Debug, Clone)]
+pub enum Wavelength {
+    W470nm,
+    W570nm,
+    W630nm,
+    W850nm,
+}
+
+impl Wavelength {
+    pub fn get_hovered_color(&self) -> Color32 {
+        match self {
+            Wavelength::W470nm => {
+                COLOR_BLUE_300
+            }
+            Wavelength::W570nm => {
+                COLOR_EMERALD_300
+            }
+            Wavelength::W630nm => {
+                COLOR_ORANGE_300
+            }
+            Wavelength::W850nm => {
+                COLOR_RED_300
+            }
+        }
+    }
+
+    pub fn get_color(&self) -> Color32 {
+        match self {
+            Wavelength::W470nm => {
+                COLOR_BLUE_400
+            }
+            Wavelength::W570nm => {
+                COLOR_EMERALD_400
+            }
+            Wavelength::W630nm => {
+                COLOR_ORANGE_400
+            }
+            Wavelength::W850nm => {
+                COLOR_RED_400
+            }
+        }
+    }
+}
+
+impl Default for Wavelength {
+    fn default() -> Self {
+        Wavelength::W470nm
+    }
+}
+
 #[derive(Debug)]
 pub struct MicroWell {
     pub led_on: bool,
     pub measurement: f32,
-    pub disabled: bool
+    pub disabled: bool,
+    pub wavelength: Wavelength
 }
 
 impl Default for MicroWell {
@@ -15,7 +66,8 @@ impl Default for MicroWell {
         Self {
             led_on: false,
             measurement: 200.34,
-            disabled: false
+            disabled: false,
+            wavelength: Wavelength::default()
         }
     }
 }
@@ -34,13 +86,13 @@ impl MicroWell {
         } else {
             if response.hovered(){
                 if self.led_on {
-                    COLOR_BLUE_300
+                    self.wavelength.get_hovered_color()
                 } else {
                     COLOR_SLATE_500
                 }
             } else {
                 if self.led_on {
-                    COLOR_BLUE_400
+                    self.wavelength.get_color()
                 } else {
                     COLOR_SLATE_600
                 }

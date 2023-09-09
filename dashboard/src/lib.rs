@@ -3,7 +3,7 @@ use eframe::egui;
 use eframe::egui::pos2;
 use eframe::epaint::{Color32};
 use crate::colors::*;
-use crate::microwell::MicroWell;
+use crate::microwell::{MicroWell, Wavelength};
 use crate::serial::Serial;
 
 pub const BOX_SIDE: f32 = 50.0;
@@ -17,7 +17,8 @@ mod serial;
 
 pub struct Application {
     well_state: Vec<MicroWell>,
-    serial: Serial
+    serial: Serial,
+    wavelength: Wavelength
 }
 
 impl Application {
@@ -37,7 +38,8 @@ impl Application {
                 MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
                 MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
             ],
-            serial: Serial::default()
+            serial: Serial::default(),
+            wavelength: Wavelength::default()
         }
     }
 }
@@ -53,14 +55,27 @@ impl eframe::App for Application {
                     if ui.button("Preferences").clicked() {
                         ui.close_menu();
                     }
-                    ui.menu_button("Load Pattern", |ui| {
-                        ui.button("1");
-                        ui.button("2");
-                        ui.button("3");
-                    });
                 });
                 ui.menu_button("Tools", |ui| {
                     self.serial.show(ctx, ui);
+                    ui.menu_button("wavelength", |ui| {
+                        if ui.button("470nm").clicked() {
+                            self.wavelength = Wavelength::W470nm;
+                            ui.close_menu();
+                        }
+                        if ui.button("570nm").clicked() {
+                            self.wavelength = Wavelength::W570nm;
+                            ui.close_menu();
+                        }
+                        if ui.button("630nm").clicked() {
+                            self.wavelength = Wavelength::W630nm;
+                            ui.close_menu();
+                        }
+                        if ui.button("850nm").clicked() {
+                            self.wavelength = Wavelength::W850nm;
+                            ui.close_menu();
+                        }
+                    });
                 });
 
                 if ui.button("Run").clicked() {
@@ -77,6 +92,7 @@ impl eframe::App for Application {
                             (row == 4 && col == 1) {
                             self.well_state[row as usize * 5 + col as usize].disabled = true;
                         }
+                        self.well_state[row as usize * 5 + col as usize].wavelength = self.wavelength.clone();
                         self.well_state[row as usize * 5 + col as usize].show(ctx, ui);
 
                         // Add spacing between circles in the same row
