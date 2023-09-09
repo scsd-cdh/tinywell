@@ -49,16 +49,13 @@ impl eframe::App for Application {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("Save Pattern").clicked() {
-                        ui.close_menu();
-                    }
                     if ui.button("Preferences").clicked() {
                         ui.close_menu();
                     }
                 });
                 ui.menu_button("Tools", |ui| {
                     self.serial.show(ctx, ui);
-                    ui.menu_button("wavelength", |ui| {
+                    ui.menu_button("Wavelength", |ui| {
                         if ui.button("470nm").clicked() {
                             self.wavelength = Wavelength::W470nm;
                             ui.close_menu();
@@ -74,6 +71,27 @@ impl eframe::App for Application {
                         if ui.button("850nm").clicked() {
                             self.wavelength = Wavelength::W850nm;
                             ui.close_menu();
+                        }
+                    });
+
+                    ui.menu_button("Presets", |ui| {
+                        if ui.button("none").clicked() {
+                            self.well_state.iter_mut().for_each(|well| well.led_on = false);
+                        }
+                        if ui.button("corners").clicked() {
+                            self.well_state.iter_mut().for_each(|well| well.led_on = false);
+                            self.well_state[0].led_on = true;
+                            self.well_state[(MICRO_WELL_NUM - 1.0) as usize].led_on = true;
+                            self.well_state[(MICRO_WELL_NUM - 1.0) as usize * 5].led_on = true;
+                            self.well_state[(MICRO_WELL_NUM - 1.0) as usize * 5 + (MICRO_WELL_NUM - 1.0) as usize].led_on = true;
+                        }
+                        if ui.button("3x3").clicked() {
+                            self.well_state.iter_mut().for_each(|well| well.led_on = false);
+                            for row in 0..3 {
+                                for col in 0..3 {
+                                    self.well_state[row as usize * 5 + col as usize].led_on = true;
+                                }
+                            }
                         }
                     });
                 });
