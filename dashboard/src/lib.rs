@@ -45,11 +45,38 @@ impl Application {
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            self.serial.show(ctx, ui);
+            ui.horizontal(|ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Save Pattern").clicked() {
+                        ui.close_menu();
+                    }
+                    if ui.button("Preferences").clicked() {
+                        ui.close_menu();
+                    }
+                    ui.menu_button("Load Pattern", |ui| {
+                        ui.button("1");
+                        ui.button("2");
+                        ui.button("3");
+                    });
+                });
+                ui.menu_button("Tools", |ui| {
+                    self.serial.show(ctx, ui);
+                });
+
+                if ui.button("Run").clicked() {
+
+                }
+            });
+            ui.separator();
 
             for row in 0..MICRO_WELL_NUM as i32 {
                 ui.horizontal(|ui| {
                     for col in 0..MICRO_WELL_NUM as i32 {
+                        if (col == 3 && row != 3) ||
+                            (col != 3 && row == 3) ||
+                            (row == 4 && col == 1) {
+                            self.well_state[row as usize * 5 + col as usize].disabled = true;
+                        }
                         self.well_state[row as usize * 5 + col as usize].show(ctx, ui);
 
                         // Add spacing between circles in the same row
