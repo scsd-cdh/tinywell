@@ -7,6 +7,7 @@ use crate::colors::*;
 pub struct MicroWell {
     pub led_on: bool,
     pub measurement: f32,
+    pub disabled: bool
 }
 
 impl MicroWell {

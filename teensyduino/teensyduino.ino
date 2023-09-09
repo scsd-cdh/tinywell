@@ -1,77 +1,120 @@
 #include <Wire.h>
 
-// Sensors: https://www.mouser.com/datasheet/2/239/Lite-On_LTR-303ALS-01_DS_ver%201.1-1175269.pdf
-// Mux:     https://www.ti.com/lit/ds/symlink/tca9548a.pdf?ts=1693960886543
-// LED:     https://www.lumissil.com/assets/pdf/core/IS31FL3726A_DS.pdf
+#define MUX_ADDR_1    0x70
+#define MUX_ADDR_2    0x72
 
-// TODOs
-// Look at LED pins, find if they have to be pulled high or low to turn LED on 
-// Figure out how the MUX works to communicate with the 16 different photodiodes
-// Setup a command flow for the application to command the payload
+#define LTR303_ADDR                  0x29
+#define LTR303_ALS_CONTR_REG         0x80
+#define LTR303_ALS_MEAS_RATE_REG     0x85
+#define LTR303_ALS_DATA_CH1_REG      0x88
 
-#define LTR303_ADDRESS 0x29
-#define LTR303_CONTROL_REG 0x80
-#define LTR303_RATE_REG 0x85
-#define LTR303_CH1_REG 0x88
+uint8_t power = 0;
+uint8_t current_channel = 0;
 
 void setup() {
-  // Turn LED connected to pin 13 on Teensy
+  // Turn LED connected to pin 13 on Teensy to show the board is connected.
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
 
-
-  // Begin Serial connection with baudrate 9600
-  Serial.begin(9600);
-
+  // Setup Communication
+  Serial.begin(115200);
   Wire.begin();
-  setup_sensor(LTR303_ADDRESS);
+  
+  // Initialize all sensors.
+  for(int i = 0; i < 8; i ++) {
+    current_channel = pow(2, i);
+
+    Serial.print("Setting up: 0x");
+    Serial.print(current_channel, HEX);
+    Serial.print(" from ");
+    Serial.println(MUX_ADDR_1, HEX);
+
+    set_channel(MUX_ADDR_1, current_channel);
+    initialize_sensor();
+    set_channel(MUX_ADDR_1, 0);
+
+    Serial.print("Setting up: 0x");
+    Serial.print(current_channel, HEX);
+    Serial.print(" from ");
+    Serial.println(MUX_ADDR_2, HEX);
+
+    set_channel(MUX_ADDR_2, current_channel);
+    initialize_sensor();
+    set_channel(MUX_ADDR_2, 0);
+    
+    delay(1000);
+  }
+
+  current_channel = 0;
 }
 
-
 void loop(){
-  uint16_t reading_1, reading_0;
-  read_channels(LTR303_ADDRESS, reading_1, reading_0);
- 
-  Serial.print("Reading 1 (IR):           ");
-  Serial.println(reading_1);
+  power = (power + 1) % 8;
+  current_channel = pow(2, power);
+  
+  Serial.print("Reading: 0x");
+  Serial.print(current_channel, HEX);
+  Serial.print(" from ");
+  Serial.println(MUX_ADDR_1, HEX);
 
+  set_channel(MUX_ADDR_1, current_channel);
+  read_sensor();
+  set_channel(MUX_ADDR_1, 0);
 
-  Serial.print("Reading 0 (Visible + IR): ");
-  Serial.println(reading_0);
- 
+  Serial.print("Reading: 0x");
+  Serial.print(current_channel, HEX);
+  Serial.print(" from ");
+  Serial.println(MUX_ADDR_2, HEX);
+
+  set_channel(MUX_ADDR_2, current_channel);
+  read_sensor();
+  set_channel(MUX_ADDR_2, 0);
+
   // Wait for a second
   delay(1000);
 }
 
-void setup_sensor(uint8_t address) {
-  // Set register address 0x80 to 0xD1
-  // This will set the gain of the sensor to x96
-  Wire.beginTransmission(address);
-  Wire.write(LTR303_CONTROL_REG);
-  Wire.write(0x1D);
-  Wire.endTransmission();
 
-  // Set register address 0x85 to 0x03
-  // This will set the measurement rate to 200ms
-  Wire.beginTransmission(address);
-  Wire.write(LTR303_RATE_REG);
-  Wire.write(0x03);
+void set_channel(uint8_t addr, uint8_t channel) {
+  Wire.beginTransmission(addr);
+  Wire.write(channel);
   Wire.endTransmission();
 }
 
-void read_channels(uint8_t address, uint16_t& channel_0, uint16_t& channel_1) {
-  // Request to read channel 1
-  Wire.beginTransmission(address);
-  Wire.write(LTR303_CH1_REG);
+void initialize_sensor() {
+  // This will set the gain of the sensor to x96
+  Wire.beginTransmission(LTR303_ADDR);
+  Wire.write(LTR303_ALS_CONTR_REG);
+  Wire.write(0x1D);
+  Wire.endTransmission();
+
+  // This will set the integration rate to 50ms and measurement rate to 100ms
+  Wire.beginTransmission(LTR303_ADDR);
+  Wire.write(LTR303_ALS_MEAS_RATE_REG);
+  Wire.write(0x09);
+  Wire.endTransmission();
+}
+
+void read_sensor() {
+  // Set to register to data
+  Wire.beginTransmission(LTR303_ADDR);
+  Wire.write(LTR303_ALS_DATA_CH1_REG);
   Wire.endTransmission();
 
   // Read 4 bytes and wait until you have 4 bytes to read
-  Wire.requestFrom(LTR303_ADDRESS, 4);
+  Wire.requestFrom(LTR303_ADDR, 4);
   while(Wire.available() != 4);
 
-  channel_1 = Wire.read();
-  channel_1 |= Wire.read() << 8;
+  // Read and print channel 1 and 0
+  uint16_t reading_1 = Wire.read();
+  reading_1 |= Wire.read() << 8;
 
-  channel_0 = Wire.read();
-  channel_0 |= Wire.read() << 8;
+  uint16_t reading_0 = Wire.read();
+  reading_0 |= Wire.read() << 8;
+ 
+  Serial.print("Reading 1 (IR):           ");
+  Serial.println(reading_1);
+
+  Serial.print("Reading 0 (Visible + IR): ");
+  Serial.println(reading_0);
 }
