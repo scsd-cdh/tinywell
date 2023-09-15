@@ -4,8 +4,7 @@ use crate::colors::{COLOR_BLUE_600, COLOR_ROSE_400, COLOR_WHITE};
 
 pub struct Serial {
     ports: Vec<SerialPortInfo>,
-    port: SerialPortInfo,
-    is_recording: bool
+    port: SerialPortInfo
 }
 
 impl Default for Serial {
@@ -19,8 +18,7 @@ impl Default for Serial {
 
         Serial {
             ports,
-            port,
-            is_recording: false
+            port
         }
     }
 }

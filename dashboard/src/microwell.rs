@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Formatter;
 use eframe::egui;
 use eframe::egui::{Align2, Color32, Pos2, Sense, Stroke, TextStyle, Ui};
 use crate::{BOX_SIDE, CELL_RADIUS};
@@ -9,6 +11,17 @@ pub enum Wavelength {
     W570nm,
     W630nm,
     W850nm,
+}
+
+impl fmt::Display for Wavelength {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Wavelength::W470nm => write!(f, "470nm"),
+            Wavelength::W570nm => write!(f, "570nm"),
+            Wavelength::W630nm => write!(f, "630nm"),
+            Wavelength::W850nm => write!(f, "850nm"),
+        }
+    }
 }
 
 impl Wavelength {
@@ -58,7 +71,8 @@ pub struct MicroWell {
     pub led_on: bool,
     pub measurement: f32,
     pub disabled: bool,
-    pub wavelength: Wavelength
+    pub wavelength: Wavelength,
+    pub brightness: f32
 }
 
 impl Default for MicroWell {
@@ -67,7 +81,8 @@ impl Default for MicroWell {
             led_on: false,
             measurement: 200.34,
             disabled: false,
-            wavelength: Wavelength::default()
+            wavelength: Wavelength::default(),
+            brightness: 100.0
         }
     }
 }
@@ -86,13 +101,15 @@ impl MicroWell {
         } else {
             if response.hovered(){
                 if self.led_on {
-                    self.wavelength.get_hovered_color()
+                    let color = self.wavelength.get_hovered_color();
+                    Color32::from_rgba_unmultiplied(color.r(),color.g(), color.b(), (50.0 + (self.brightness/100.0) * 205.0) as u8)
                 } else {
                     COLOR_SLATE_500
                 }
             } else {
                 if self.led_on {
-                    self.wavelength.get_color()
+                    let color = self.wavelength.get_color();
+                    Color32::from_rgba_unmultiplied(color.r(),color.g(), color.b(), (50.0 + (self.brightness/100.0) * 205.0) as u8)
                 } else {
                     COLOR_SLATE_600
                 }
