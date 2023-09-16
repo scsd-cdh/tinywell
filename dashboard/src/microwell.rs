@@ -5,8 +5,9 @@ use eframe::egui::{Align2, Color32, Pos2, Sense, Stroke, TextStyle, Ui};
 use std::fmt;
 use std::fmt::Formatter;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum Wavelength {
+    #[default]
     W470nm,
     W570nm,
     W630nm,
@@ -52,12 +53,6 @@ impl Wavelength {
     }
 }
 
-impl Default for Wavelength {
-    fn default() -> Self {
-        Wavelength::W470nm
-    }
-}
-
 #[derive(Debug)]
 pub struct MicroWell {
     pub led_on: bool,
@@ -88,37 +83,33 @@ impl MicroWell {
             ui.allocate_painter(egui::Vec2::new(BOX_SIDE, BOX_SIDE), Sense::click());
 
         // Calculate the center and radius of the circle
-        let mut center = response.rect.center();
+        let center = response.rect.center();
 
         // Choose color based on hover state
         let fill_color = if self.disabled || self.damaged {
             COLOR_SLATE_700
-        } else {
-            if response.hovered() {
-                if self.led_on {
-                    let color = self.wavelength.get_hovered_color();
-                    Color32::from_rgba_unmultiplied(
-                        color.r(),
-                        color.g(),
-                        color.b(),
-                        (50.0 + (self.brightness / 100.0) * 205.0) as u8,
-                    )
-                } else {
-                    COLOR_SLATE_500
-                }
+        } else if response.hovered() {
+            if self.led_on {
+                let color = self.wavelength.get_hovered_color();
+                Color32::from_rgba_unmultiplied(
+                    color.r(),
+                    color.g(),
+                    color.b(),
+                    (50.0 + (self.brightness / 100.0) * 205.0) as u8,
+                )
             } else {
-                if self.led_on {
-                    let color = self.wavelength.get_color();
-                    Color32::from_rgba_unmultiplied(
-                        color.r(),
-                        color.g(),
-                        color.b(),
-                        (50.0 + (self.brightness / 100.0) * 205.0) as u8,
-                    )
-                } else {
-                    COLOR_SLATE_600
-                }
+                COLOR_SLATE_500
             }
+        } else if self.led_on {
+            let color = self.wavelength.get_color();
+            Color32::from_rgba_unmultiplied(
+                color.r(),
+                color.g(),
+                color.b(),
+                (50.0 + (self.brightness / 100.0) * 205.0) as u8,
+            )
+        } else {
+            COLOR_SLATE_600
         };
 
         // Draw the circle with the chosen color
@@ -141,7 +132,7 @@ impl MicroWell {
         painter.text(
             text_pos,
             Align2::CENTER_CENTER,
-            &self.measurement,
+            self.measurement,
             TextStyle::Small.resolve(&ctx.style()),
             COLOR_SLATE_100,
         );
@@ -152,6 +143,6 @@ impl MicroWell {
             return true;
         }
 
-        return false;
+        false
     }
 }

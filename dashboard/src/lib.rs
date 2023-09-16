@@ -65,32 +65,35 @@ impl Application {
     pub fn request_leds(&mut self) {
         // Send simulation setup
         let mut req = vec![0b11111111];
-        req.push((255.0 + (-255.0*self.sequence[self.current_plate].brightness / 100.0)) as u8);
+        req.push((255.0 + (-255.0 * self.sequence[self.current_plate].brightness / 100.0)) as u8);
 
         for (idx, well) in self.sequence[self.current_plate].wells.iter().enumerate() {
             if !well.led_on || well.damaged || well.disabled {
                 continue;
             }
 
-            req.push(0b10000000 | match idx {
-                0 => ((5 * 4) + well.wavelength.get_idx()),
-                1 => ((6 * 4) + well.wavelength.get_idx()),
-                2 => ((1 * 4) + well.wavelength.get_idx()),
-                4 => ((2 * 4) + well.wavelength.get_idx()),
-                5 => ((4 * 4) + well.wavelength.get_idx()),
-                6 => ((7 * 4) + well.wavelength.get_idx()),
-                7 => ((0 * 4) + well.wavelength.get_idx()),
-                9 => ((3 * 4) + well.wavelength.get_idx()),
-                10 => ((9 * 4) + well.wavelength.get_idx()),
-                11 => ((10 * 4) + well.wavelength.get_idx()),
-                12 => ((13 * 4) + well.wavelength.get_idx()),
-                14 => ((14 * 4) + well.wavelength.get_idx()),
-                18 => ((12 * 4) + well.wavelength.get_idx()),
-                20 => ((8 * 4) + well.wavelength.get_idx()),
-                22 => ((11 * 4) + well.wavelength.get_idx()),
-                24 => ((15 * 4) + well.wavelength.get_idx()),
-                _ => 0b00000000
-            });
+            req.push(
+                0b10000000
+                    | match idx {
+                        0 => (5 * 4)    + well.wavelength.get_idx(),
+                        1 => (6 * 4)    + well.wavelength.get_idx(),
+                        2 =>      4     + well.wavelength.get_idx(),
+                        4 => (2 * 4)    + well.wavelength.get_idx(),
+                        5 => (4 * 4)    + well.wavelength.get_idx(),
+                        6 => (7 * 4)    + well.wavelength.get_idx(),
+                        7 =>              well.wavelength.get_idx(),
+                        9 => (3 * 4)    + well.wavelength.get_idx(),
+                        10 => (9 * 4)   + well.wavelength.get_idx(),
+                        11 => (10 * 4)  + well.wavelength.get_idx(),
+                        12 => (13 * 4)  + well.wavelength.get_idx(),
+                        14 => (14 * 4)  + well.wavelength.get_idx(),
+                        18 => (12 * 4)  + well.wavelength.get_idx(),
+                        20 => (8 * 4)   + well.wavelength.get_idx(),
+                        22 => (11 * 4)  + well.wavelength.get_idx(),
+                        24 => (15 * 4)  + well.wavelength.get_idx(),
+                        _ => 0b00000000,
+                    },
+            );
         }
 
         self.serial.request_led(req.as_slice());
@@ -98,8 +101,9 @@ impl Application {
 }
 
 impl eframe::App for Application {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        self.serial.request_data(&mut self.sequence[self.current_plate]);
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.serial
+            .request_data(&mut self.sequence[self.current_plate]);
 
         if self.is_simulating
             && self.sequence_start.elapsed()
@@ -171,8 +175,7 @@ impl eframe::App for Application {
                         self.clear_leds();
                         self.is_simulating = false;
                     }
-                } else {
-                    if ui.button("Run Simulation").clicked() {
+                } else if ui.button("Run Simulation").clicked() {
                         self.is_simulating = true;
                         self.current_plate = 0;
 
@@ -192,7 +195,6 @@ impl eframe::App for Application {
                         self.last_write_time = Instant::now();
                         self.sequence_start = Instant::now();
                         self.sim_start = Instant::now();
-                    }
                 }
 
                 if self.is_simulating {

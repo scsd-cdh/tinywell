@@ -90,9 +90,15 @@ impl MicroPlate {
                             self.wells[idx].disabled = true;
                         }
 
-                        self.wells.iter_mut().for_each(|mut well| well.damaged = false);
+                        self.wells
+                            .iter_mut()
+                            .for_each(|well| well.damaged = false);
 
-                        if (col == 4 && row != 4) || (col == 2 && row == 0) || (col == 2 && row == 4) || (col == 0 && row == 1) {
+                        if (col == 4 && row != 4)
+                            || (col == 2 && row == 0)
+                            || (col == 2 && row == 4)
+                            || (col == 0 && row == 1)
+                        {
                             self.wells[idx].damaged = true;
                         }
 
@@ -119,7 +125,7 @@ impl MicroPlate {
                             }
                         }
 
-                        self.wells[idx].brightness = self.brightness.clone();
+                        self.wells[idx].brightness = self.brightness;
                         self.wells[idx].wavelength = self.wavelength.clone();
                         self.wells[idx].show(ctx, ui);
 
