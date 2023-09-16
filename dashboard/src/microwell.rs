@@ -2,10 +2,10 @@ use std::fmt;
 use std::fmt::Formatter;
 use eframe::egui;
 use eframe::egui::{Align2, Color32, Pos2, Sense, Stroke, TextStyle, Ui};
-use crate::{BOX_SIDE, CELL_RADIUS};
 use crate::colors::*;
+use crate::microplate::{BOX_SIDE, CELL_RADIUS};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Wavelength {
     W470nm,
     W570nm,

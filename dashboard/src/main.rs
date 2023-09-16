@@ -1,12 +1,14 @@
-use eframe::{egui, NativeOptions};
+use eframe::{egui, NativeOptions, Theme};
 use dashboard::Application;
 
 fn main() -> Result<(), eframe::Error> {
     let options = NativeOptions {
         decorated: true,
         transparent: true,
-        min_window_size: Some(egui::vec2(500.0, 500.0)),
-        initial_window_size: Some(egui::vec2(500.0, 500.0)),
+        default_theme: Theme::Dark,
+        min_window_size: Some(egui::vec2(1280.0, 720.0)),
+        initial_window_size: Some(egui::vec2(1280.0, 720.0)),
+        resizable: false,
         ..Default::default()
     };
     eframe::run_native(
