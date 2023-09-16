@@ -28,9 +28,9 @@ impl Wavelength {
     pub fn get_idx(&self) -> u8 {
         match self {
             Wavelength::W470nm => 0,
-            Wavelength::W570nm => 1,
+            Wavelength::W570nm => 3,
             Wavelength::W630nm => 2,
-            Wavelength::W850nm => 3,
+            Wavelength::W850nm => 1,
         }
     }
     pub fn get_hovered_color(&self) -> Color32 {
@@ -63,6 +63,7 @@ pub struct MicroWell {
     pub led_on: bool,
     pub measurement: f32,
     pub disabled: bool,
+    pub damaged: bool,
     pub wavelength: Wavelength,
     pub brightness: f32,
 }
@@ -71,8 +72,9 @@ impl Default for MicroWell {
     fn default() -> Self {
         Self {
             led_on: false,
-            measurement: 200.34,
+            measurement: 0.0,
             disabled: false,
+            damaged: false,
             wavelength: Wavelength::default(),
             brightness: 100.0,
         }
@@ -89,7 +91,7 @@ impl MicroWell {
         let mut center = response.rect.center();
 
         // Choose color based on hover state
-        let fill_color = if self.disabled {
+        let fill_color = if self.disabled || self.damaged {
             COLOR_SLATE_700
         } else {
             if response.hovered() {
@@ -123,12 +125,12 @@ impl MicroWell {
         painter.circle_filled(center, CELL_RADIUS, fill_color);
 
         // Add white outline if hovered
-        if response.hovered() && !self.disabled {
+        if response.hovered() && !self.disabled && !self.damaged {
             let stroke = Stroke::new(1.0, Color32::from_rgb(255, 255, 255));
             painter.circle_stroke(center, CELL_RADIUS, stroke);
         }
 
-        if self.disabled {
+        if self.disabled || self.damaged {
             return false;
         }
         // Draw text

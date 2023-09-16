@@ -2,8 +2,8 @@
 
 // Make sure these are correct
 #define DATA   17
-#define LATCH  15
 #define CLK    16
+#define LATCH  15
 #define ENABLE 14
 
 #define MUX_ADDR_1    0x70
@@ -54,9 +54,6 @@ void setup() {
   pinMode(CLK, OUTPUT);
   pinMode(DATA, OUTPUT);
   pinMode(ENABLE, OUTPUT);
-
-  // 0 - 255
-  analogWrite(ENABLE, 0);
 }
 
 void loop(){
@@ -90,18 +87,23 @@ void loop(){
     
     set_channel(MUX_ADDR_2, 0);
   }
-
-  if (Serial.available() > 0) {
+  
+  while (Serial.available() > 0) {
     uint8_t cmd = Serial.read();
     
     if(cmd == 0b11111111) {
+      // Prepare LEDs
       turn_leds_off();
+      cmd = Serial.read();
+      analogWrite(ENABLE, cmd);
     } else {
-      int state = (cmd & 0b00000001) ? HIGH : LOW;
-      int bitIndex = cmd & 0b11111110;
+      int state = (cmd & 0b10000000) ? HIGH : LOW;
+      int bitIndex = cmd & 0b01111111;
       
       setBit(bitIndex, state);
     }
+
+    delay(100);
   }
 
   delay(250);
@@ -109,6 +111,10 @@ void loop(){
 
 void turn_leds_off() {
   digitalWrite(LATCH, LOW);
+
+  for(int i = 0; i < 8; i ++) {
+    bitArray[i] = 0.0;
+  }
   
   shiftOut(DATA, CLK, MSBFIRST, 0);
   shiftOut(DATA, CLK, MSBFIRST, 0);
@@ -149,7 +155,7 @@ void updateShiftRegisters() {
   digitalWrite(LATCH, LOW);
 
   // Push each byte to the shift registers, starting from the last one
-  for (int i = 7; i >= 0; i--) {
+  for (int i = 0; i < 8; i++) {
     shiftOut(DATA, CLK, MSBFIRST, bitArray[i]);
   }
 

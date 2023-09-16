@@ -1,12 +1,7 @@
 use eframe::egui::{Context, Ui};
-use lazy_static::lazy_static;
 use serialport::{available_ports, SerialPortInfo, SerialPortType};
-use std::sync::RwLock;
 use std::time::Duration;
-
-lazy_static! {
-    pub static ref COMMAND_QUEUE: RwLock<Vec<u8>> = RwLock::new(Vec::default());
-}
+use crate::microplate::MicroPlate;
 
 pub struct Serial {
     ports: Vec<SerialPortInfo>,
@@ -57,7 +52,23 @@ impl Serial {
         });
     }
 
-    pub fn request_data(&mut self) {
+    pub fn request_led(&mut self, buf: &[u8]) {
+        if let Some(info) = self.ports.get(self.port_selected) {
+            match serialport::new(info.clone().port_name, 115_200)
+                .timeout(Duration::from_millis(10))
+                .open() {
+                Ok(mut port) => {
+                    match port.write(buf) {
+                        Ok(_) => {}
+                        Err(_) => {}
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    }
+
+    pub fn request_data(&mut self, plate: &mut MicroPlate) {
         if let Some(info) = self.ports.get(self.port_selected) {
             match serialport::new(info.clone().port_name, 115_200)
                 .timeout(Duration::from_millis(10))
@@ -68,7 +79,71 @@ impl Serial {
                     while let Ok(_bytes_read) = port.read_exact(serial_buf.as_mut_slice()) {
                         // Use the bytes in `serial_buf`
                         let reconstructed_value: u16 = ((serial_buf[2] as u16) << 8) | (serial_buf[1] as u16);
-                        println!("Read bytes: {} {}", serial_buf[0], reconstructed_value);
+
+                        let mux = serial_buf[0] & 0b10000000;
+                        let idx = serial_buf[0] & 0b01111111;
+
+                        match mux {
+                            0 => {
+                                match idx {
+                                    0 => {
+                                        plate.wells[22].measurement = reconstructed_value as f32
+                                    }
+                                    1 => {
+                                        plate.wells[1].measurement = reconstructed_value as f32
+                                    }
+                                    2 => {
+                                        plate.wells[6].measurement = reconstructed_value as f32
+                                    }
+                                    3 => {
+                                        plate.wells[11].measurement = reconstructed_value as f32
+                                    }
+                                    4 => {
+                                        plate.wells[0].measurement = reconstructed_value as f32
+                                    }
+                                    5 => {
+                                        plate.wells[5].measurement = reconstructed_value as f32
+                                    }
+                                    6 => {
+                                        plate.wells[10].measurement = reconstructed_value as f32
+                                    }
+                                    7 => {
+                                        plate.wells[20].measurement = reconstructed_value as f32
+                                    }
+                                    _ => {}
+                                }
+                            },
+                            0b10000000 => {
+                                match idx {
+                                    0 => {
+                                        plate.wells[24].measurement = reconstructed_value as f32
+                                    }
+                                    1 => {
+                                        plate.wells[14].measurement = reconstructed_value as f32
+                                    }
+                                    2 => {
+                                        plate.wells[9].measurement = reconstructed_value as f32
+                                    }
+                                    3 => {
+                                        plate.wells[4].measurement = reconstructed_value as f32
+                                    }
+                                    4 => {
+                                        plate.wells[2].measurement = reconstructed_value as f32
+                                    }
+                                    5 => {
+                                        plate.wells[7].measurement = reconstructed_value as f32
+                                    }
+                                    6 => {
+                                        plate.wells[12].measurement = reconstructed_value as f32
+                                    }
+                                    7 => {
+                                        plate.wells[18].measurement = reconstructed_value as f32
+                                    }
+                                    _ => {}
+                                }
+                            },
+                            _ => {}
+                        }
                     }
                 }
                 Err(_) => {}

@@ -58,48 +58,56 @@ impl Application {
             is_simulating: false,
         }
     }
-
+    pub fn clear_leds(&mut self) {
+        let req = vec![0b11111111];
+        self.serial.request_led(req.as_slice());
+    }
     pub fn request_leds(&mut self) {
         // Send simulation setup
         let mut req = vec![0b11111111];
+        req.push((255.0 + (-255.0*self.sequence[self.current_plate].brightness / 100.0)) as u8);
+
         for (idx, well) in self.sequence[self.current_plate].wells.iter().enumerate() {
-            if !well.led_on {
+            if !well.led_on || well.damaged || well.disabled {
                 continue;
             }
 
-            match idx {
-                0 => req.push((5 * 4) + well.wavelength.get_idx()),
-                1 => req.push((6 * 4) + well.wavelength.get_idx()),
-                2 => req.push((1 * 4) + well.wavelength.get_idx()),
-                4 => req.push((2 * 4) + well.wavelength.get_idx()),
-                5 => req.push((4 * 4) + well.wavelength.get_idx()),
-                6 => req.push((7 * 4) + well.wavelength.get_idx()),
-                7 => req.push((0 * 4) + well.wavelength.get_idx()),
-                9 => req.push((3 * 4) + well.wavelength.get_idx()),
-                10 => req.push((9 * 4) + well.wavelength.get_idx()),
-                11 => req.push((10 * 4) + well.wavelength.get_idx()),
-                12 => req.push((13 * 4) + well.wavelength.get_idx()),
-                14 => req.push((14 * 4) + well.wavelength.get_idx()),
-                18 => req.push((12 * 4) + well.wavelength.get_idx()),
-                20 => req.push((8 * 4) + well.wavelength.get_idx()),
-                22 => req.push((11 * 4) + well.wavelength.get_idx()),
-                24 => req.push((15 * 4) + well.wavelength.get_idx()),
-                _ => {}
-            }
+            req.push(0b10000000 | match idx {
+                0 => ((5 * 4) + well.wavelength.get_idx()),
+                1 => ((6 * 4) + well.wavelength.get_idx()),
+                2 => ((1 * 4) + well.wavelength.get_idx()),
+                4 => ((2 * 4) + well.wavelength.get_idx()),
+                5 => ((4 * 4) + well.wavelength.get_idx()),
+                6 => ((7 * 4) + well.wavelength.get_idx()),
+                7 => ((0 * 4) + well.wavelength.get_idx()),
+                9 => ((3 * 4) + well.wavelength.get_idx()),
+                10 => ((9 * 4) + well.wavelength.get_idx()),
+                11 => ((10 * 4) + well.wavelength.get_idx()),
+                12 => ((13 * 4) + well.wavelength.get_idx()),
+                14 => ((14 * 4) + well.wavelength.get_idx()),
+                18 => ((12 * 4) + well.wavelength.get_idx()),
+                20 => ((8 * 4) + well.wavelength.get_idx()),
+                22 => ((11 * 4) + well.wavelength.get_idx()),
+                24 => ((15 * 4) + well.wavelength.get_idx()),
+                _ => 0b00000000
+            });
         }
+
+        self.serial.request_led(req.as_slice());
     }
 }
 
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        self.serial.request_data();
+        self.serial.request_data(&mut self.sequence[self.current_plate]);
 
         if self.is_simulating
             && self.sequence_start.elapsed()
                 >= Duration::from_secs(self.sequence[self.current_plate].duration)
         {
             if self.current_plate + 1 >= self.sequence.len() {
-                self.is_simulating = false
+                self.is_simulating = false;
+                self.clear_leds();
             } else {
                 self.current_plate += 1;
                 self.sequence_start = Instant::now();
@@ -109,7 +117,6 @@ impl eframe::App for Application {
 
         if self.is_simulating && self.last_write_time.elapsed() >= Duration::from_secs(1) {
             // Open file in append mode, or create it if it doesn't exist
-            println!("{:?}", self.current_file);
             let mut file = OpenOptions::new()
                 .write(true)
                 .append(true)
@@ -130,6 +137,7 @@ impl eframe::App for Application {
                 self.sequence[self.current_plate]
                     .wells
                     .iter()
+                    .filter(|well| !well.disabled)
                     .map(|well| well.measurement.to_string())
                     .collect::<Vec<String>>()
                     .join(",")
@@ -160,6 +168,7 @@ impl eframe::App for Application {
 
                 if self.is_simulating {
                     if ui.button("Stop Simulation").clicked() {
+                        self.clear_leds();
                         self.is_simulating = false;
                     }
                 } else {
@@ -205,13 +214,23 @@ impl eframe::App for Application {
                                 format!("Plate Config {}\nduration: {}s", idx + 1, plate.duration),
                             );
                         }
-                        if ui.button("New Config").clicked() {
+                        if ui.button("New Plate").clicked() {
                             self.sequence.push(MicroPlate::default());
                             self.current_plate = self.sequence.len() - 1;
                         }
                     });
+                    ui.vertical(|ui| {
+                        ui.add_enabled_ui(self.sequence.len() > 1, |ui| {
+                            if ui.button("Remove Plate").clicked() {
+                                self.sequence.remove(self.current_plate);
+                                if self.current_plate != 0 {
+                                    self.current_plate -= 1;
+                                }
+                            }
+                        });
 
-                    self.sequence[self.current_plate].show(ctx, ui);
+                        self.sequence[self.current_plate].show(ctx, ui);
+                    })
                 });
             });
         });

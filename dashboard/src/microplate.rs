@@ -1,7 +1,5 @@
 use crate::microwell::{MicroWell, Wavelength};
-use crate::serial::COMMAND_QUEUE;
 use eframe::egui;
-use std::time::Duration;
 
 pub const BOX_SIDE: f32 = 50.0;
 pub const CELL_RADIUS: f32 = BOX_SIDE * 0.4;
@@ -91,6 +89,36 @@ impl MicroPlate {
                         {
                             self.wells[idx].disabled = true;
                         }
+
+                        self.wells.iter_mut().for_each(|mut well| well.damaged = false);
+
+                        if (col == 4 && row != 4) || (col == 2 && row == 0) || (col == 2 && row == 4) || (col == 0 && row == 1) {
+                            self.wells[idx].damaged = true;
+                        }
+
+                        match self.wells[idx].wavelength {
+                            Wavelength::W470nm => {
+                                if col == 2 && row == 1 {
+                                    self.wells[idx].damaged = true;
+                                }
+                            }
+                            Wavelength::W570nm => {
+                                if col == 0 && row == 0 {
+                                    self.wells[idx].damaged = true;
+                                }
+                            }
+                            Wavelength::W630nm => {
+                                if (col == 4) || (col == 3) || (col == 2 && row == 1) {
+                                    self.wells[idx].damaged = true;
+                                }
+                            }
+                            Wavelength::W850nm => {
+                                if (col == 2 && row == 1) || col == 0 && row == 0 {
+                                    self.wells[idx].damaged = true;
+                                }
+                            }
+                        }
+
                         self.wells[idx].brightness = self.brightness.clone();
                         self.wells[idx].wavelength = self.wavelength.clone();
                         self.wells[idx].show(ctx, ui);
