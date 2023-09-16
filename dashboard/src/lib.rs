@@ -21,11 +21,16 @@ mod serial;
 pub struct Application {
     sequence: Vec<MicroPlate>,
     current_plate: usize,
+    
     serial: Serial,
-    path: PathBuf,
-    is_recording: bool,
+
+    folder_path: PathBuf,
     current_file: PathBuf,
-    last_write_time: Instant
+
+    sim_start: Instant,
+    sequence_start: Instant,
+    last_write_time: Instant,
+    is_simulating: bool,
 }
 
 impl Application {
@@ -41,18 +46,28 @@ impl Application {
             sequence: vec![MicroPlate::default()],
             current_plate: 0,
             serial: Serial::default(),
-            path: PathBuf::from(env::current_exe().expect("Failed to get current executable path").parent().expect("Unable to find parent folder")),
-            is_recording: false,
+            folder_path: PathBuf::from(env::current_exe().expect("Failed to get current executable path").parent().expect("Unable to find parent folder")),
             current_file: PathBuf::default(),
-            last_write_time: Instant::now()
+            sim_start: Instant::now(),
+            sequence_start: Instant::now(),
+            last_write_time: Instant::now(),
+            is_simulating: false,
         }
     }
 }
 
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        let elapsed_time = self.last_write_time.elapsed();
-        if self.is_recording && elapsed_time >= Duration::from_secs(1) {
+        if self.is_simulating && self.sequence_start.elapsed() >= Duration::from_secs(self.sequence[self.current_plate].duration) {
+            if self.current_plate + 1 >= self.sequence.len() {
+                self.is_simulating = false
+            } else {
+                self.current_plate += 1;
+                self.sequence_start = Instant::now();
+            }
+        }
+
+        if self.is_simulating && self.last_write_time.elapsed() >= Duration::from_secs(1) {
             // Open file in append mode, or create it if it doesn't exist
             println!("{:?}", self.current_file);
             let mut file = OpenOptions::new()
@@ -61,7 +76,7 @@ impl eframe::App for Application {
                 .create(true)
                 .open(&self.current_file).expect("Unable to open file.");
 
-            write!(file, "{},{}", self.sequence[self.current_plate].brightness, self.sequence[self.current_plate].wavelength).expect("Unable to write brightness and wavelength.");
+            write!(file, "{},{},", self.sequence[self.current_plate].brightness, self.sequence[self.current_plate].wavelength).expect("Unable to write brightness and wavelength.");
             writeln!(file, "{}", self.sequence[self.current_plate].wells.iter()
                     .map(|well| well.measurement.to_string())
                     .collect::<Vec<String>>()
@@ -74,9 +89,9 @@ impl eframe::App for Application {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button(format!("Save Directory: {:?}", self.path)).clicked() {
+                    if ui.button(format!("Save Directory: {:?}", self.folder_path)).clicked() {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                            self.path = path;
+                            self.folder_path = path;
                             ui.close_menu();
                         }
                     }
@@ -86,13 +101,15 @@ impl eframe::App for Application {
                     self.serial.show(ctx, ui);
                 });
 
-                if self.is_recording {
+                if self.is_simulating {
                     if ui.button("Stop Simulation").clicked() {
-                        self.is_recording = false;
+                        self.is_simulating = false;
                     }
                 } else {
                     if ui.button("Run Simulation").clicked() {
-                        self.is_recording = true;
+                        self.is_simulating = true;
+                        self.current_plate = 0;
+
                         // Get the current time
                         let local_time: DateTime<Local> = Local::now();
 
@@ -100,13 +117,21 @@ impl eframe::App for Application {
                         let time_str = local_time.format("%Y-%m-%d_%H-%M-%S").to_string();
 
                         // Create a filename with the current time
-                        self.current_file = PathBuf::from(&self.path);
+                        self.current_file = PathBuf::from(&self.folder_path);
                         self.current_file.push(format!("microfluidic_test_{}.csv", time_str));
 
                         self.last_write_time = Instant::now();
+                        self.sequence_start = Instant::now();
+                        self.sim_start = Instant::now();
                     }
                 }
 
+                if self.is_simulating {
+                    let sim_duration: u64 = self.sim_start.elapsed().as_secs();
+                    let total_duration: u64 = self.sequence.iter().map(|plate| plate.duration).sum();
+
+                    ui.label(format!("{} seconds left", total_duration - sim_duration));
+                }
             });
             ui.separator();
             ui.horizontal(|ui| {

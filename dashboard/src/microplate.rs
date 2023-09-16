@@ -11,7 +11,7 @@ pub const MICRO_WELL_NUM: f32 = 5.0;
 pub struct MicroPlate {
     pub brightness: f32,
     pub wavelength: Wavelength,
-    pub duration: u32,
+    pub duration: u64,
     pub wells: Vec<MicroWell>
 }
 
