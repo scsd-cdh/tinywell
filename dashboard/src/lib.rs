@@ -1,17 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::env;
-use std::fs::OpenOptions;
-use std::path::PathBuf;
-use std::time::{Duration, Instant};
-use eframe::egui;
-use eframe::epaint::{Color32};
 use crate::colors::*;
+use crate::microplate::MicroPlate;
 use crate::serial::Serial;
 use chrono::prelude::*;
+use eframe::egui;
+use eframe::epaint::Color32;
+use std::env;
+use std::fs::OpenOptions;
 use std::io::Write;
-use std::ptr::write;
-use crate::microplate::MicroPlate;
+use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 mod colors;
 mod microplate;
@@ -21,7 +20,7 @@ mod serial;
 pub struct Application {
     sequence: Vec<MicroPlate>,
     current_plate: usize,
-    
+
     serial: Serial,
 
     folder_path: PathBuf,
@@ -46,7 +45,12 @@ impl Application {
             sequence: vec![MicroPlate::default()],
             current_plate: 0,
             serial: Serial::default(),
-            folder_path: PathBuf::from(env::current_exe().expect("Failed to get current executable path").parent().expect("Unable to find parent folder")),
+            folder_path: PathBuf::from(
+                env::current_exe()
+                    .expect("Failed to get current executable path")
+                    .parent()
+                    .expect("Unable to find parent folder"),
+            ),
             current_file: PathBuf::default(),
             sim_start: Instant::now(),
             sequence_start: Instant::now(),
@@ -54,16 +58,52 @@ impl Application {
             is_simulating: false,
         }
     }
+
+    pub fn request_leds(&mut self) {
+        // Send simulation setup
+        let mut req = vec![0b11111111];
+        for (idx, well) in self.sequence[self.current_plate].wells.iter().enumerate() {
+            if !well.led_on {
+                continue;
+            }
+
+            match idx {
+                0 => req.push((5 * 4) + well.wavelength.get_idx()),
+                1 => req.push((6 * 4) + well.wavelength.get_idx()),
+                2 => req.push((1 * 4) + well.wavelength.get_idx()),
+                4 => req.push((2 * 4) + well.wavelength.get_idx()),
+                5 => req.push((4 * 4) + well.wavelength.get_idx()),
+                6 => req.push((7 * 4) + well.wavelength.get_idx()),
+                7 => req.push((0 * 4) + well.wavelength.get_idx()),
+                9 => req.push((3 * 4) + well.wavelength.get_idx()),
+                10 => req.push((9 * 4) + well.wavelength.get_idx()),
+                11 => req.push((10 * 4) + well.wavelength.get_idx()),
+                12 => req.push((13 * 4) + well.wavelength.get_idx()),
+                14 => req.push((14 * 4) + well.wavelength.get_idx()),
+                18 => req.push((12 * 4) + well.wavelength.get_idx()),
+                20 => req.push((8 * 4) + well.wavelength.get_idx()),
+                22 => req.push((11 * 4) + well.wavelength.get_idx()),
+                24 => req.push((15 * 4) + well.wavelength.get_idx()),
+                _ => {}
+            }
+        }
+    }
 }
 
 impl eframe::App for Application {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        if self.is_simulating && self.sequence_start.elapsed() >= Duration::from_secs(self.sequence[self.current_plate].duration) {
+        self.serial.request_data();
+
+        if self.is_simulating
+            && self.sequence_start.elapsed()
+                >= Duration::from_secs(self.sequence[self.current_plate].duration)
+        {
             if self.current_plate + 1 >= self.sequence.len() {
                 self.is_simulating = false
             } else {
                 self.current_plate += 1;
                 self.sequence_start = Instant::now();
+                self.request_leds();
             }
         }
 
@@ -74,13 +114,27 @@ impl eframe::App for Application {
                 .write(true)
                 .append(true)
                 .create(true)
-                .open(&self.current_file).expect("Unable to open file.");
+                .open(&self.current_file)
+                .expect("Unable to open file.");
 
-            write!(file, "{},{},", self.sequence[self.current_plate].brightness, self.sequence[self.current_plate].wavelength).expect("Unable to write brightness and wavelength.");
-            writeln!(file, "{}", self.sequence[self.current_plate].wells.iter()
+            write!(
+                file,
+                "{},{},",
+                self.sequence[self.current_plate].brightness,
+                self.sequence[self.current_plate].wavelength
+            )
+            .expect("Unable to write brightness and wavelength.");
+            writeln!(
+                file,
+                "{}",
+                self.sequence[self.current_plate]
+                    .wells
+                    .iter()
                     .map(|well| well.measurement.to_string())
                     .collect::<Vec<String>>()
-                    .join(",")).expect("Unable to write line of well data");
+                    .join(",")
+            )
+            .expect("Unable to write line of well data");
 
             // Update the last write time
             self.last_write_time = Instant::now();
@@ -89,7 +143,10 @@ impl eframe::App for Application {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button(format!("Save Directory: {:?}", self.folder_path)).clicked() {
+                    if ui
+                        .button(format!("Save Directory: {:?}", self.folder_path))
+                        .clicked()
+                    {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.folder_path = path;
                             ui.close_menu();
@@ -110,6 +167,8 @@ impl eframe::App for Application {
                         self.is_simulating = true;
                         self.current_plate = 0;
 
+                        self.request_leds();
+
                         // Get the current time
                         let local_time: DateTime<Local> = Local::now();
 
@@ -118,7 +177,8 @@ impl eframe::App for Application {
 
                         // Create a filename with the current time
                         self.current_file = PathBuf::from(&self.folder_path);
-                        self.current_file.push(format!("microfluidic_test_{}.csv", time_str));
+                        self.current_file
+                            .push(format!("microfluidic_test_{}.csv", time_str));
 
                         self.last_write_time = Instant::now();
                         self.sequence_start = Instant::now();
@@ -128,26 +188,32 @@ impl eframe::App for Application {
 
                 if self.is_simulating {
                     let sim_duration: u64 = self.sim_start.elapsed().as_secs();
-                    let total_duration: u64 = self.sequence.iter().map(|plate| plate.duration).sum();
+                    let total_duration: u64 =
+                        self.sequence.iter().map(|plate| plate.duration).sum();
 
                     ui.label(format!("{} seconds left", total_duration - sim_duration));
                 }
             });
             ui.separator();
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    for (idx, plate) in self.sequence.iter().enumerate() {
-                        ui.selectable_value(&mut self.current_plate, idx, format!("Plate Config {}\nduration: {}s", idx + 1, plate.duration));
-                    }
-                    if ui.button("New Config").clicked() {
-                        self.sequence.push(MicroPlate::default());
-                        self.current_plate = self.sequence.len() - 1;
-                    }
+            ui.add_enabled_ui(!self.is_simulating, |ui| {
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        for (idx, plate) in self.sequence.iter().enumerate() {
+                            ui.selectable_value(
+                                &mut self.current_plate,
+                                idx,
+                                format!("Plate Config {}\nduration: {}s", idx + 1, plate.duration),
+                            );
+                        }
+                        if ui.button("New Config").clicked() {
+                            self.sequence.push(MicroPlate::default());
+                            self.current_plate = self.sequence.len() - 1;
+                        }
+                    });
+
+                    self.sequence[self.current_plate].show(ctx, ui);
                 });
-
-                self.sequence[self.current_plate].show(ctx,ui);
             });
-
         });
 
         ctx.request_repaint();

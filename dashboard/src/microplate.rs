@@ -1,6 +1,7 @@
-use std::time::Duration;
-use eframe::egui;
 use crate::microwell::{MicroWell, Wavelength};
+use crate::serial::COMMAND_QUEUE;
+use eframe::egui;
+use std::time::Duration;
 
 pub const BOX_SIDE: f32 = 50.0;
 pub const CELL_RADIUS: f32 = BOX_SIDE * 0.4;
@@ -12,7 +13,7 @@ pub struct MicroPlate {
     pub brightness: f32,
     pub wavelength: Wavelength,
     pub duration: u64,
-    pub wells: Vec<MicroWell>
+    pub wells: Vec<MicroWell>,
 }
 
 impl Default for MicroPlate {
@@ -22,12 +23,32 @@ impl Default for MicroPlate {
             wavelength: Wavelength::default(),
             duration: 10,
             wells: vec![
-                MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
-                MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
-                MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
-                MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
-                MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(), MicroWell::default(),
-            ]
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+                MicroWell::default(),
+            ],
         }
     }
 }
@@ -63,14 +84,16 @@ impl MicroPlate {
             for row in 0..MICRO_WELL_NUM as i32 {
                 ui.horizontal(|ui| {
                     for col in 0..MICRO_WELL_NUM as i32 {
-                        if (col == 3 && row != 3) ||
-                            (col != 3 && row == 3) ||
-                            (row == 4 && col == 1) {
-                            self.wells[row as usize * 5 + col as usize].disabled = true;
+                        let idx = row as usize * 5 + col as usize;
+                        if (col == 3 && row != 3)
+                            || (col != 3 && row == 3)
+                            || (row == 4 && col == 1)
+                        {
+                            self.wells[idx].disabled = true;
                         }
-                        self.wells[row as usize * 5 + col as usize].brightness = self.brightness.clone();
-                        self.wells[row as usize * 5 + col as usize].wavelength = self.wavelength.clone();
-                        self.wells[row as usize * 5 + col as usize].show(ctx, ui);
+                        self.wells[idx].brightness = self.brightness.clone();
+                        self.wells[idx].wavelength = self.wavelength.clone();
+                        self.wells[idx].show(ctx, ui);
 
                         // Add spacing between circles in the same row
                         if col < MICRO_WELL_NUM as i32 - 1 {

@@ -1,5 +1,11 @@
 #include <Wire.h>
 
+// Make sure these are correct
+#define DATA   17
+#define LATCH  15
+#define CLK    16
+#define ENABLE 14
+
 #define MUX_ADDR_1    0x70
 #define MUX_ADDR_2    0x72
 
@@ -8,8 +14,14 @@
 #define LTR303_ALS_MEAS_RATE_REG     0x85
 #define LTR303_ALS_DATA_CH1_REG      0x88
 
-uint8_t power = 0;
+#define ALS_GAIN  96.0
+#define ALS_INT    1.0
+
 uint8_t current_channel = 0;
+uint16_t sensor_data = 0;
+
+// Initialize a 64-bit array to keep track of the state of each bit
+uint8_t bitArray[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 void setup() {
   // Turn LED connected to pin 13 on Teensy to show the board is connected.
@@ -24,56 +36,125 @@ void setup() {
   for(int i = 0; i < 8; i ++) {
     current_channel = pow(2, i);
 
-    Serial.print("Setting up: 0x");
-    Serial.print(current_channel, HEX);
-    Serial.print(" from ");
-    Serial.println(MUX_ADDR_1, HEX);
-
     set_channel(MUX_ADDR_1, current_channel);
     initialize_sensor();
     set_channel(MUX_ADDR_1, 0);
 
-    Serial.print("Setting up: 0x");
-    Serial.print(current_channel, HEX);
-    Serial.print(" from ");
-    Serial.println(MUX_ADDR_2, HEX);
-
+    delay(250);
+    
     set_channel(MUX_ADDR_2, current_channel);
     initialize_sensor();
     set_channel(MUX_ADDR_2, 0);
     
-    delay(1000);
+    delay(250);
   }
 
-  current_channel = 0;
+  // Setup LEDs
+  pinMode(LATCH, OUTPUT);
+  pinMode(CLK, OUTPUT);
+  pinMode(DATA, OUTPUT);
+  pinMode(ENABLE, OUTPUT);
+
+  // 0 - 255
+  analogWrite(ENABLE, 0);
 }
 
 void loop(){
-  power = (power + 1) % 8;
-  current_channel = pow(2, power);
-  
-  Serial.print("Reading: 0x");
-  Serial.print(current_channel, HEX);
-  Serial.print(" from ");
-  Serial.println(MUX_ADDR_1, HEX);
+  for(uint8_t i = 0; i < 8; i ++) {
+    current_channel = pow(2, i);
 
-  set_channel(MUX_ADDR_1, current_channel);
-  read_sensor();
-  set_channel(MUX_ADDR_1, 0);
+    // FROM MUX 1
+    set_channel(MUX_ADDR_1, current_channel);
+    
+    sensor_data = (uint16_t) read_sensor();
+    
+    uint8_t low_byte = sensor_data & 0xFF;
+    uint8_t high_byte = (sensor_data >> 8) & 0xFF;
 
-  Serial.print("Reading: 0x");
-  Serial.print(current_channel, HEX);
-  Serial.print(" from ");
-  Serial.println(MUX_ADDR_2, HEX);
+    Serial.write(i);
+    Serial.write(low_byte);
+    Serial.write(high_byte);
+    
+    set_channel(MUX_ADDR_1, 0);
+   
+    set_channel(MUX_ADDR_2, current_channel);
+    
+    sensor_data = (uint16_t) read_sensor();
+    
+    low_byte = sensor_data & 0xFF;
+    high_byte = (sensor_data >> 8) & 0xFF;
 
-  set_channel(MUX_ADDR_2, current_channel);
-  read_sensor();
-  set_channel(MUX_ADDR_2, 0);
+    Serial.write(0b10000000 | i);
+    Serial.write(low_byte);
+    Serial.write(high_byte);
+    
+    set_channel(MUX_ADDR_2, 0);
+  }
 
-  // Wait for a second
-  delay(1000);
+  if (Serial.available() > 0) {
+    uint8_t cmd = Serial.read();
+    
+    if(cmd == 0b11111111) {
+      turn_leds_off();
+    } else {
+      int state = (cmd & 0b00000001) ? HIGH : LOW;
+      int bitIndex = cmd & 0b11111110;
+      
+      setBit(bitIndex, state);
+    }
+  }
+
+  delay(250);
 }
 
+void turn_leds_off() {
+  digitalWrite(LATCH, LOW);
+  
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+  shiftOut(DATA, CLK, MSBFIRST, 0);
+  
+  digitalWrite(LATCH, HIGH);
+}
+
+void setBit(int bitIndex, int state) {
+  if (bitIndex < 0 || bitIndex >= 64) {
+    return; // bit index out of bounds
+  }
+
+  // Determine which byte and bit within that byte the target bit resides
+  int byteIndex = bitIndex / 8;
+  int bitPosition = bitIndex % 8;
+
+  // Set or clear the specific bit
+  if (state == HIGH) {
+    bitSet(bitArray[byteIndex], bitPosition);
+  } else {
+    bitClear(bitArray[byteIndex], bitPosition);
+  }
+
+  // Update the shift register outputs
+  updateShiftRegisters();
+}
+
+void updateShiftRegisters() {
+  digitalWrite(LATCH, LOW);
+
+  // Push each byte to the shift registers, starting from the last one
+  for (int i = 7; i >= 0; i--) {
+    shiftOut(DATA, CLK, MSBFIRST, bitArray[i]);
+  }
+
+  digitalWrite(LATCH, HIGH); // Latch the data
+}
 
 void set_channel(uint8_t addr, uint8_t channel) {
   Wire.beginTransmission(addr);
@@ -95,7 +176,7 @@ void initialize_sensor() {
   Wire.endTransmission();
 }
 
-void read_sensor() {
+float read_sensor() {
   // Set to register to data
   Wire.beginTransmission(LTR303_ADDR);
   Wire.write(LTR303_ALS_DATA_CH1_REG);
@@ -111,10 +192,18 @@ void read_sensor() {
 
   uint16_t reading_0 = Wire.read();
   reading_0 |= Wire.read() << 8;
- 
-  Serial.print("Reading 1 (IR):           ");
-  Serial.println(reading_1);
 
-  Serial.print("Reading 0 (Visible + IR): ");
-  Serial.println(reading_0);
+  float ch0 = (float) reading_0;
+  float ch1 = (float) reading_1;
+ 
+  float ratio = ch1/(ch0+ch1);
+  if (ratio < 0.45) {
+    return (1.7743*ch0 + 1.1059*ch1)/ALS_GAIN/ALS_INT;
+  } else if (ratio < 0.64 && ratio >= 0.45) {
+    return (4.2785*ch0 - 1.9548*ch1)/ALS_GAIN/ALS_INT;
+  } else if (ratio < 0.85 && ratio >= 0.64) {
+    return (0.5926*ch0 + 0.1185*ch1)/ALS_GAIN/ALS_INT;
+  } else {
+    return 0.0;
+  }
 }
