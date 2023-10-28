@@ -5,6 +5,7 @@ fn main() -> Result<(), eframe::Error> {
     let options = NativeOptions {
         decorated: true,
         transparent: true,
+        follow_system_theme: false,
         default_theme: Theme::Dark,
         min_window_size: Some(egui::vec2(650.0, 600.0)),
         initial_window_size: Some(egui::vec2(650.0, 600.0)),
@@ -12,7 +13,7 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
     eframe::run_native(
-        "Calyx",
+        "Tinywell",
         options,
         Box::new(|cc| {
             let app = Application::new(cc);
