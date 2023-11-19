@@ -16,37 +16,16 @@ pub struct MicroPlate {
 
 impl Default for MicroPlate {
     fn default() -> Self {
+        let mut wells = vec![];
+        for n in 0u8..25 {
+            wells.push(MicroWell::new(('A' as u8+n) as char));
+        }
+
         Self {
             brightness: 100.0,
             wavelength: Wavelength::default(),
             duration: 10,
-            wells: vec![
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-                MicroWell::default(),
-            ],
+            wells
         }
     }
 }
@@ -93,37 +72,6 @@ impl MicroPlate {
                         self.wells
                             .iter_mut()
                             .for_each(|well| well.damaged = false);
-
-                        if (col == 4 && row != 4)
-                            || (col == 2 && row == 0)
-                            || (col == 2 && row == 4)
-                            || (col == 0 && row == 1)
-                        {
-                            self.wells[idx].damaged = true;
-                        }
-
-                        match self.wells[idx].wavelength {
-                            Wavelength::W470nm => {
-                                if col == 2 && row == 1 {
-                                    self.wells[idx].damaged = true;
-                                }
-                            }
-                            Wavelength::W570nm => {
-                                if col == 0 && row == 0 {
-                                    self.wells[idx].damaged = true;
-                                }
-                            }
-                            Wavelength::W630nm => {
-                                if (col == 4) || (col == 3) || (col == 2 && row == 1) {
-                                    self.wells[idx].damaged = true;
-                                }
-                            }
-                            Wavelength::W850nm => {
-                                if (col == 2 && row == 1) || col == 0 && row == 0 {
-                                    self.wells[idx].damaged = true;
-                                }
-                            }
-                        }
 
                         self.wells[idx].brightness = self.brightness;
                         self.wells[idx].wavelength = self.wavelength.clone();

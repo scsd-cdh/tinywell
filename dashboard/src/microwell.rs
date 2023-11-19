@@ -61,6 +61,7 @@ pub struct MicroWell {
     pub damaged: bool,
     pub wavelength: Wavelength,
     pub brightness: f32,
+    pub label: char
 }
 
 impl Default for MicroWell {
@@ -72,18 +73,34 @@ impl Default for MicroWell {
             damaged: false,
             wavelength: Wavelength::default(),
             brightness: 100.0,
+            label: 'A'
         }
     }
 }
 
 impl MicroWell {
+    pub fn new(label: char) -> MicroWell {
+        MicroWell {
+            led_on: false,
+            measurement: 0.0,
+            disabled: false,
+            damaged: false,
+            wavelength: Wavelength::default(),
+            brightness: 100.0,
+            label
+        }
+    }
+
     pub fn show(&mut self, ctx: &egui::Context, ui: &mut Ui) -> bool {
         // Allocate some space for the button
         let (response, painter) =
-            ui.allocate_painter(egui::Vec2::new(BOX_SIDE, BOX_SIDE), Sense::click());
+            ui.allocate_painter(egui::Vec2::new(BOX_SIDE, BOX_SIDE + 15.0), Sense::click());
 
         // Calculate the center and radius of the circle
-        let center = response.rect.center();
+        let center = Pos2 {
+            x: response.rect.center().x,
+            y: response.rect.center().y - 10.0
+        };
 
         // Choose color based on hover state
         let fill_color = if self.disabled || self.damaged {
@@ -133,6 +150,18 @@ impl MicroWell {
             text_pos,
             Align2::CENTER_CENTER,
             self.measurement,
+            TextStyle::Small.resolve(&ctx.style()),
+            COLOR_SLATE_100,
+        );
+
+        let label_pos = Pos2 {
+            x: center.x,
+            y: center.y + 30.0,
+        };
+        painter.text(
+            label_pos,
+            Align2::CENTER_CENTER,
+            self.label,
             TextStyle::Small.resolve(&ctx.style()),
             COLOR_SLATE_100,
         );
