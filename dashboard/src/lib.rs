@@ -130,9 +130,10 @@ impl eframe::App for Application {
 
             write!(
                 file,
-                "{},{},",
+                "{},{},{},",
                 self.sequence[self.current_plate].brightness,
-                self.sequence[self.current_plate].wavelength
+                self.sequence[self.current_plate].wavelength,
+                self.sim_start.elapsed().as_secs()
             )
             .expect("Unable to write brightness and wavelength.");
             writeln!(
@@ -176,25 +177,50 @@ impl eframe::App for Application {
                         self.is_simulating = false;
                     }
                 } else if ui.button("Run Simulation").clicked() {
-                        self.is_simulating = true;
-                        self.current_plate = 0;
+                    self.is_simulating = true;
+                    self.current_plate = 0;
 
-                        self.request_leds();
+                    self.request_leds();
+                    self.sequence[0].clear();
 
-                        // Get the current time
-                        let local_time: DateTime<Local> = Local::now();
+                    // Get the current time
+                    let local_time: DateTime<Local> = Local::now();
 
-                        // Format the current time as a string
-                        let time_str = local_time.format("%Y-%m-%d_%H-%M-%S").to_string();
+                    // Format the current time as a string
+                    let time_str = local_time.format("%Y-%m-%d_%H-%M-%S").to_string();
 
-                        // Create a filename with the current time
-                        self.current_file = PathBuf::from(&self.folder_path);
-                        self.current_file
-                            .push(format!("microfluidic_test_{}.csv", time_str));
+                    // Create a filename with the current time
+                    self.current_file = PathBuf::from(&self.folder_path);
+                    self.current_file
+                        .push(format!("microfluidic_test_{}.csv", time_str));
 
-                        self.last_write_time = Instant::now();
-                        self.sequence_start = Instant::now();
-                        self.sim_start = Instant::now();
+                    self.last_write_time = Instant::now();
+                    self.sequence_start = Instant::now();
+                    self.sim_start = Instant::now();
+
+                    let mut file = OpenOptions::new()
+                        .write(true)
+                        .append(true)
+                        .create(true)
+                        .open(&self.current_file)
+                        .expect("Unable to open file.");
+                    write!(
+                        file,
+                        "Brightness [%],Wavelength [nm],Duration [s],"
+                    )
+                        .expect("Unable to write file header.");
+                    writeln!(
+                        file,
+                        "{}",
+                        self.sequence[self.current_plate]
+                            .wells
+                            .iter()
+                            .filter(|well| !well.disabled)
+                            .map(|well| well.label.to_string())
+                            .collect::<Vec<String>>()
+                            .join(",")
+                    )
+                        .expect("Unable to write file header.");
                 }
 
                 if self.is_simulating {

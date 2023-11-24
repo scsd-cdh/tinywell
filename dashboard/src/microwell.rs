@@ -72,7 +72,7 @@ impl Default for MicroWell {
             disabled: false,
             damaged: false,
             wavelength: Wavelength::default(),
-            brightness: 100.0,
+            brightness: 50.0,
             label: 'A'
         }
     }

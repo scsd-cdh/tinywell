@@ -22,9 +22,9 @@ impl Default for MicroPlate {
         }
 
         Self {
-            brightness: 100.0,
+            brightness: 50.0,
             wavelength: Wavelength::default(),
-            duration: 10,
+            duration: 5,
             wells
         }
     }
@@ -90,5 +90,14 @@ impl MicroPlate {
                 }
             }
         });
+    }
+
+    pub fn clear(&mut self) {
+        for row in 0..MICRO_WELL_NUM as i32 {
+            for col in 0..MICRO_WELL_NUM as i32 {
+                let idx = row as usize * 5 + col as usize;
+                self.wells[idx].measurement = 0.0;
+            }
+        }
     }
 }

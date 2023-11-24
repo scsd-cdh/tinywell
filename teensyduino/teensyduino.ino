@@ -7,7 +7,7 @@
 #define ENABLE 14
 
 #define MUX_ADDR_1    0x70
-#define MUX_ADDR_2    0x72
+#define MUX_ADDR_2    0x77
 
 #define LTR303_ADDR                  0x29
 #define LTR303_ALS_CONTR_REG         0x80
@@ -57,6 +57,7 @@ void setup() {
 }
 
 void loop(){
+
   for(uint8_t i = 0; i < 8; i ++) {
     current_channel = pow(2, i);
 
@@ -102,11 +103,9 @@ void loop(){
       
       setBit(bitIndex, state);
     }
-
-    delay(100);
   }
 
-  delay(250);
+  delay(100);
 }
 
 void turn_leds_off() {

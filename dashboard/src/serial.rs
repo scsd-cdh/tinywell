@@ -33,6 +33,7 @@ impl Serial {
         }
     }
     pub fn show(&mut self, _ctx: &Context, ui: &mut Ui) {
+        self.ports = available_ports().expect("Couldn't retrieve available ports.");
         let port_names = self
             .ports
             .iter()
@@ -81,25 +82,25 @@ impl Serial {
 
                     match mux {
                         0 => match idx {
-                            0 => plate.wells[22].measurement = reconstructed_value as f32,
-                            1 => plate.wells[1].measurement = reconstructed_value as f32,
+                            0 => plate.wells[9].measurement = reconstructed_value as f32,
+                            1 => plate.wells[5].measurement = reconstructed_value as f32,
                             2 => plate.wells[6].measurement = reconstructed_value as f32,
-                            3 => plate.wells[11].measurement = reconstructed_value as f32,
+                            3 => plate.wells[7].measurement = reconstructed_value as f32,
                             4 => plate.wells[0].measurement = reconstructed_value as f32,
-                            5 => plate.wells[5].measurement = reconstructed_value as f32,
-                            6 => plate.wells[10].measurement = reconstructed_value as f32,
-                            7 => plate.wells[20].measurement = reconstructed_value as f32,
+                            5 => plate.wells[1].measurement = reconstructed_value as f32,
+                            6 => plate.wells[2].measurement = reconstructed_value as f32,
+                            7 => plate.wells[4].measurement = reconstructed_value as f32,
                             _ => {}
                         },
                         0b10000000 => match idx {
-                            0 => plate.wells[24].measurement = reconstructed_value as f32,
-                            1 => plate.wells[14].measurement = reconstructed_value as f32,
-                            2 => plate.wells[9].measurement = reconstructed_value as f32,
-                            3 => plate.wells[4].measurement = reconstructed_value as f32,
-                            4 => plate.wells[2].measurement = reconstructed_value as f32,
-                            5 => plate.wells[7].measurement = reconstructed_value as f32,
+                            0 => plate.wells[22].measurement = reconstructed_value as f32,
+                            1 => plate.wells[18].measurement = reconstructed_value as f32,
+                            2 => plate.wells[24].measurement = reconstructed_value as f32,
+                            3 => plate.wells[20].measurement = reconstructed_value as f32,
+                            4 => plate.wells[10].measurement = reconstructed_value as f32,
+                            5 => plate.wells[11].measurement = reconstructed_value as f32,
                             6 => plate.wells[12].measurement = reconstructed_value as f32,
-                            7 => plate.wells[18].measurement = reconstructed_value as f32,
+                            7 => plate.wells[14].measurement = reconstructed_value as f32,
                             _ => {}
                         },
                         _ => {}
