@@ -276,7 +276,7 @@ impl eframe::App for Application {
                             ui.selectable_value(
                                 &mut self.current_plate,
                                 idx,
-                                format!("Well Pattern {}\nsequence duration: {}s\nwavelength: {}", idx + 1, plate.duration, plate.wavelength),
+                                format!("Well Pattern {}\nsequence duration: {}s\nwavelength: {}\nbrightness: {}%", idx + 1, plate.duration, plate.wavelength, plate.brightness),
                             );
                         }
                         if ui.button("New Pattern").clicked() {

@@ -1,0 +1,34 @@
+[DesignatorManager]
+
+[SheetNumberManager]
+SheetNumberOrder=Display Order
+SheetNumberMethod=Increasing
+DocumentName0=File Name.SchDoc
+UniqueIDPath0=\1KMGUGYWG
+SheetNumber0=1
+DocumentName1=File Name.SchDoc
+UniqueIDPath1=\2KMGUGYWG
+SheetNumber1=2
+DocumentName2=File Name.SchDoc
+UniqueIDPath2=\3KMGUGYWG
+SheetNumber2=3
+DocumentName3=File Name.SchDoc
+UniqueIDPath3=\4KMGUGYWG
+SheetNumber3=4
+DocumentName4=File Name.SchDoc
+UniqueIDPath4=\5KMGUGYWG
+SheetNumber4=5
+DocumentName5=File Name.SchDoc
+UniqueIDPath5=\6KMGUGYWG
+SheetNumber5=6
+DocumentName6=File Name.SchDoc
+UniqueIDPath6=\7KMGUGYWG
+SheetNumber6=7
+DocumentName7=File Name.SchDoc
+UniqueIDPath7=\8KMGUGYWG
+SheetNumber7=8
+DocumentName8=Sheet1.SchDoc
+UniqueIDPath8=
+SheetNumber8=9
+
+
