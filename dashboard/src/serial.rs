@@ -48,7 +48,7 @@ impl Serial {
             for (idx, port) in self.ports.iter().enumerate() {
                 let device_name = Serial::get_port_name(port);
 
-                ui.selectable_value(&mut self.port_selected, idx, format!("{}", device_name));
+                ui.selectable_value(&mut self.port_selected, idx, device_name.to_string());
             }
         });
     }

@@ -1,12 +1,14 @@
-use crate::microwell::{MicroWell, Wavelength};
+use crate::microwell::MicroWell;
+use crate::wavelength::Wavelength;
 use eframe::egui;
+use serde::{Serialize, Deserialize};
 
 pub const BOX_SIDE: f32 = 50.0;
 pub const CELL_RADIUS: f32 = BOX_SIDE * 0.4;
 pub const CELL_SPACING: f32 = 40.0;
 pub const MICRO_WELL_NUM: f32 = 5.0;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MicroPlate {
     pub brightness: f32,
     pub wavelength: Wavelength,
@@ -17,8 +19,13 @@ pub struct MicroPlate {
 impl Default for MicroPlate {
     fn default() -> Self {
         let mut wells = vec![];
-        for n in 0u8..25 {
-            wells.push(MicroWell::new(('A' as u8+n) as char));
+        let mut letter = 'H';
+
+        for _ in 0u8..5 {
+            for j in 0u8..5 {
+                wells.push(MicroWell::new(format!("{}{}", letter, j+1)));
+            }
+            letter = ((letter as u8) - 1) as char;
         }
 
         Self {
@@ -60,7 +67,7 @@ impl MicroPlate {
 
             for row in 0..MICRO_WELL_NUM as i32 {
                 ui.horizontal(|ui| {
-                    for col in 0..MICRO_WELL_NUM as i32 {
+                    for col in (0..MICRO_WELL_NUM as i32).rev() {
                         let idx = row as usize * 5 + col as usize;
                         if (col == 3 && row != 3)
                             || (col != 3 && row == 3)
@@ -68,10 +75,6 @@ impl MicroPlate {
                         {
                             self.wells[idx].disabled = true;
                         }
-
-                        self.wells
-                            .iter_mut()
-                            .for_each(|well| well.damaged = false);
 
                         self.wells[idx].brightness = self.brightness;
                         self.wells[idx].wavelength = self.wavelength.clone();

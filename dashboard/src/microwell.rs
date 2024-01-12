@@ -2,66 +2,17 @@ use crate::colors::*;
 use crate::microplate::{BOX_SIDE, CELL_RADIUS};
 use eframe::egui;
 use eframe::egui::{Align2, Color32, Pos2, Sense, Stroke, TextStyle, Ui};
-use std::fmt;
-use std::fmt::Formatter;
+use crate::wavelength::Wavelength;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub enum Wavelength {
-    #[default]
-    W470nm,
-    W570nm,
-    W630nm,
-    W850nm,
-}
-
-impl fmt::Display for Wavelength {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Wavelength::W470nm => write!(f, "470nm"),
-            Wavelength::W570nm => write!(f, "570nm"),
-            Wavelength::W630nm => write!(f, "630nm"),
-            Wavelength::W850nm => write!(f, "850nm"),
-        }
-    }
-}
-
-impl Wavelength {
-    pub fn get_idx(&self) -> u8 {
-        match self {
-            Wavelength::W470nm => 0,
-            Wavelength::W570nm => 3,
-            Wavelength::W630nm => 2,
-            Wavelength::W850nm => 1,
-        }
-    }
-    pub fn get_hovered_color(&self) -> Color32 {
-        match self {
-            Wavelength::W470nm => COLOR_BLUE_300,
-            Wavelength::W570nm => COLOR_EMERALD_300,
-            Wavelength::W630nm => COLOR_ORANGE_300,
-            Wavelength::W850nm => COLOR_RED_300,
-        }
-    }
-
-    pub fn get_color(&self) -> Color32 {
-        match self {
-            Wavelength::W470nm => COLOR_BLUE_400,
-            Wavelength::W570nm => COLOR_EMERALD_400,
-            Wavelength::W630nm => COLOR_ORANGE_400,
-            Wavelength::W850nm => COLOR_RED_400,
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MicroWell {
     pub led_on: bool,
     pub measurement: f32,
     pub disabled: bool,
-    pub damaged: bool,
     pub wavelength: Wavelength,
     pub brightness: f32,
-    pub label: char
+    pub label: String
 }
 
 impl Default for MicroWell {
@@ -70,21 +21,19 @@ impl Default for MicroWell {
             led_on: false,
             measurement: 0.0,
             disabled: false,
-            damaged: false,
             wavelength: Wavelength::default(),
             brightness: 50.0,
-            label: 'A'
+            label: "A1".to_string()
         }
     }
 }
 
 impl MicroWell {
-    pub fn new(label: char) -> MicroWell {
+    pub fn new(label: String) -> MicroWell {
         MicroWell {
             led_on: false,
             measurement: 0.0,
             disabled: false,
-            damaged: false,
             wavelength: Wavelength::default(),
             brightness: 100.0,
             label
@@ -103,7 +52,7 @@ impl MicroWell {
         };
 
         // Choose color based on hover state
-        let fill_color = if self.disabled || self.damaged {
+        let fill_color = if self.disabled {
             COLOR_SLATE_700
         } else if response.hovered() {
             if self.led_on {
@@ -133,12 +82,12 @@ impl MicroWell {
         painter.circle_filled(center, CELL_RADIUS, fill_color);
 
         // Add white outline if hovered
-        if response.hovered() && !self.disabled && !self.damaged {
+        if response.hovered() && !self.disabled {
             let stroke = Stroke::new(1.0, Color32::from_rgb(255, 255, 255));
             painter.circle_stroke(center, CELL_RADIUS, stroke);
         }
 
-        if self.disabled || self.damaged {
+        if self.disabled {
             return false;
         }
         // Draw text
@@ -161,7 +110,7 @@ impl MicroWell {
         painter.text(
             label_pos,
             Align2::CENTER_CENTER,
-            self.label,
+            self.label.clone(),
             TextStyle::Small.resolve(&ctx.style()),
             COLOR_SLATE_100,
         );

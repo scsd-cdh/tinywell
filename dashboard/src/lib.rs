@@ -1,21 +1,23 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::colors::*;
-use crate::microplate::MicroPlate;
-use crate::serial::Serial;
-use chrono::prelude::*;
-use eframe::egui;
-use eframe::epaint::Color32;
-use std::env;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::path::PathBuf;
-use std::time::{Duration, Instant};
-
 mod colors;
 mod microplate;
 mod microwell;
 mod serial;
+pub mod wavelength;
+pub mod config;
+
+use self::colors::*;
+use self::microplate::MicroPlate;
+use self::serial::Serial;
+use chrono::prelude::*;
+use eframe::egui;
+use eframe::epaint::Color32;
+use std::fs::{OpenOptions};
+use std::io::Write;
+use std::path::PathBuf;
+use std::time::{Duration, Instant};
+use crate::config::{get_results_directory, load_sequence, save_sequence_as, set_results_directory};
 
 pub struct Application {
     sequence: Vec<MicroPlate>,
@@ -25,6 +27,8 @@ pub struct Application {
 
     folder_path: PathBuf,
     current_file: PathBuf,
+
+    sequence_file: Option<PathBuf>,
 
     sim_start: Instant,
     sequence_start: Instant,
@@ -45,13 +49,9 @@ impl Application {
             sequence: vec![MicroPlate::default()],
             current_plate: 0,
             serial: Serial::default(),
-            folder_path: PathBuf::from(
-                env::current_exe()
-                    .expect("Failed to get current executable path")
-                    .parent()
-                    .expect("Unable to find parent folder"),
-            ),
+            folder_path: get_results_directory(),
             current_file: PathBuf::default(),
+            sequence_file: None,
             sim_start: Instant::now(),
             sequence_start: Instant::now(),
             last_write_time: Instant::now(),
@@ -68,29 +68,29 @@ impl Application {
         req.push((255.0 + (-255.0 * self.sequence[self.current_plate].brightness / 100.0)) as u8);
 
         for (idx, well) in self.sequence[self.current_plate].wells.iter().enumerate() {
-            if !well.led_on || well.damaged || well.disabled {
+            if !well.led_on || well.disabled {
                 continue;
             }
 
             req.push(
                 0b10000000
                     | match idx {
-                        0 => (5 * 4)    + well.wavelength.get_idx(),
-                        1 => (6 * 4)    + well.wavelength.get_idx(),
-                        2 =>      4     + well.wavelength.get_idx(),
-                        4 => (2 * 4)    + well.wavelength.get_idx(),
-                        5 => (4 * 4)    + well.wavelength.get_idx(),
-                        6 => (7 * 4)    + well.wavelength.get_idx(),
-                        7 =>              well.wavelength.get_idx(),
-                        9 => (3 * 4)    + well.wavelength.get_idx(),
-                        10 => (9 * 4)   + well.wavelength.get_idx(),
-                        11 => (10 * 4)  + well.wavelength.get_idx(),
-                        12 => (13 * 4)  + well.wavelength.get_idx(),
-                        14 => (14 * 4)  + well.wavelength.get_idx(),
-                        18 => (12 * 4)  + well.wavelength.get_idx(),
-                        20 => (8 * 4)   + well.wavelength.get_idx(),
-                        22 => (11 * 4)  + well.wavelength.get_idx(),
-                        24 => (15 * 4)  + well.wavelength.get_idx(),
+                        0 => (5 * 4)    + well.wavelength.to_u8(),
+                        1 => (6 * 4)    + well.wavelength.to_u8(),
+                        2 =>      4     + well.wavelength.to_u8(),
+                        4 => (2 * 4)    + well.wavelength.to_u8(),
+                        5 => (4 * 4)    + well.wavelength.to_u8(),
+                        6 => (7 * 4)    + well.wavelength.to_u8(),
+                        7 =>              well.wavelength.to_u8(),
+                        9 => (3 * 4)    + well.wavelength.to_u8(),
+                        10 => (9 * 4)   + well.wavelength.to_u8(),
+                        11 => (10 * 4)  + well.wavelength.to_u8(),
+                        12 => (13 * 4)  + well.wavelength.to_u8(),
+                        14 => (14 * 4)  + well.wavelength.to_u8(),
+                        18 => (12 * 4)  + well.wavelength.to_u8(),
+                        20 => (8 * 4)   + well.wavelength.to_u8(),
+                        22 => (11 * 4)  + well.wavelength.to_u8(),
+                        24 => (15 * 4)  + well.wavelength.to_u8(),
                         _ => 0b00000000,
                     },
             );
@@ -153,15 +153,50 @@ impl eframe::App for Application {
             self.last_write_time = Instant::now();
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
+        egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui
-                        .button(format!("Save Directory: {:?}", self.folder_path))
-                        .clicked()
-                    {
+                    if ui.button("Save Sequence").clicked() {
+                        if let Some(path) = &self.sequence_file {
+                            save_sequence_as(path.clone(), self.sequence.clone());
+                        } else if let Some(path) = rfd::FileDialog::new()
+                            .set_file_name("file_name.json")
+                            .add_filter("JSON", &["json"])
+                            .save_file() {
+                            self.sequence_file = Some(path.clone());
+
+                            save_sequence_as(path, self.sequence.clone());
+                            ui.close_menu();
+                        }
+                    }
+
+                    if ui.button("Save Sequence As").clicked() {
+                        if let Some(path) = rfd::FileDialog::new()
+                            .set_file_name("file_name.json")
+                            .add_filter("JSON", &["json"])
+                            .save_file() {
+                            self.sequence_file = Some(path.clone());
+
+                            save_sequence_as(path, self.sequence.clone());
+                            ui.close_menu();
+                        }
+                    }
+
+                    if ui.button("Open").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().pick_file() {
+                            self.sequence = load_sequence(path.clone());
+                            self.sequence_file = Some(path);
+                            ui.close_menu();
+                        }
+                    }
+
+                    if ui.add (
+                        egui::Button::new("Results Directory")
+                            .shortcut_text(self.folder_path.display().to_string())
+                    ).clicked() {
                         if let Some(path) = rfd::FileDialog::new().pick_folder() {
                             self.folder_path = path;
+                            set_results_directory(self.folder_path.clone());
                             ui.close_menu();
                         }
                     }
@@ -231,7 +266,9 @@ impl eframe::App for Application {
                     ui.label(format!("{} seconds left", total_duration - sim_duration));
                 }
             });
-            ui.separator();
+        });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_enabled_ui(!self.is_simulating, |ui| {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
@@ -239,10 +276,10 @@ impl eframe::App for Application {
                             ui.selectable_value(
                                 &mut self.current_plate,
                                 idx,
-                                format!("Plate Config {}\nduration: {}s", idx + 1, plate.duration),
+                                format!("Well Pattern {}\nsequence duration: {}s\nwavelength: {}", idx + 1, plate.duration, plate.wavelength),
                             );
                         }
-                        if ui.button("New Plate").clicked() {
+                        if ui.button("New Pattern").clicked() {
                             self.sequence.push(MicroPlate::default());
                             self.current_plate = self.sequence.len() - 1;
                         }
