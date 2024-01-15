@@ -5,8 +5,7 @@ use serde::{Serialize, Deserialize};
 
 pub const BOX_SIDE: f32 = 50.0;
 pub const CELL_RADIUS: f32 = BOX_SIDE * 0.4;
-pub const CELL_SPACING: f32 = 40.0;
-pub const MICRO_WELL_NUM: f32 = 5.0;
+pub const MICRO_WELL_NUM: i32 = 5;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MicroPlate {
@@ -19,13 +18,13 @@ pub struct MicroPlate {
 impl Default for MicroPlate {
     fn default() -> Self {
         let mut wells = vec![];
-        let mut letter = 'H';
 
-        for _ in 0u8..5 {
-            for j in 0u8..5 {
-                wells.push(MicroWell::new(format!("{}{}", letter, j+1)));
+        for i in 0u8..5 {
+            let mut letter = 'D';
+            for _ in 0u8..5 {
+                wells.push(MicroWell::new(format!("{}{}", letter, 5-i)));
+                letter = ((letter as u8) + 1) as char;
             }
-            letter = ((letter as u8) - 1) as char;
         }
 
         Self {
@@ -65,13 +64,13 @@ impl MicroPlate {
                     ui.end_row();
                 });
 
-            for row in 0..MICRO_WELL_NUM as i32 {
+            for row in 0..MICRO_WELL_NUM {
                 ui.horizontal(|ui| {
-                    for col in (0..MICRO_WELL_NUM as i32).rev() {
+                    for col in 0..MICRO_WELL_NUM {
                         let idx = row as usize * 5 + col as usize;
-                        if (col == 3 && row != 3)
-                            || (col != 3 && row == 3)
-                            || (row == 4 && col == 1)
+                        if (col == 1 && row != 1)
+                            || (col != 1 && row == 1)
+                            || (row == 3 && col == 0)
                         {
                             self.wells[idx].disabled = true;
                         }
@@ -79,25 +78,15 @@ impl MicroPlate {
                         self.wells[idx].brightness = self.brightness;
                         self.wells[idx].wavelength = self.wavelength.clone();
                         self.wells[idx].show(ctx, ui);
-
-                        // Add spacing between circles in the same row
-                        if col < MICRO_WELL_NUM as i32 - 1 {
-                            ui.add_space(CELL_SPACING - CELL_RADIUS * 2.0);
-                        }
                     }
                 });
-
-                // Add spacing between rows
-                if row < MICRO_WELL_NUM as i32 - 1 {
-                    ui.add_space(CELL_SPACING - CELL_RADIUS * 2.0);
-                }
             }
         });
     }
 
     pub fn clear(&mut self) {
-        for row in 0..MICRO_WELL_NUM as i32 {
-            for col in 0..MICRO_WELL_NUM as i32 {
+        for row in 0..MICRO_WELL_NUM {
+            for col in 0..MICRO_WELL_NUM {
                 let idx = row as usize * 5 + col as usize;
                 self.wells[idx].measurement = 0.0;
             }

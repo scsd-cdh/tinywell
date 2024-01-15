@@ -18,7 +18,7 @@ pub struct MicroWell {
 impl Default for MicroWell {
     fn default() -> Self {
         Self {
-            led_on: false,
+            led_on: true,
             measurement: 0.0,
             disabled: false,
             wavelength: Wavelength::default(),
@@ -31,7 +31,7 @@ impl Default for MicroWell {
 impl MicroWell {
     pub fn new(label: String) -> MicroWell {
         MicroWell {
-            led_on: false,
+            led_on: true,
             measurement: 0.0,
             disabled: false,
             wavelength: Wavelength::default(),
@@ -87,21 +87,21 @@ impl MicroWell {
             painter.circle_stroke(center, CELL_RADIUS, stroke);
         }
 
-        if self.disabled {
-            return false;
+        if !self.disabled {
+            // Draw text
+            let text_pos = Pos2 {
+                x: center.x,
+                y: center.y,
+            }; // these offsets are just for example, you may have to adjust these
+            painter.text(
+                text_pos,
+                Align2::CENTER_CENTER,
+                self.measurement,
+                TextStyle::Small.resolve(&ctx.style()),
+                COLOR_SLATE_100,
+            );
         }
-        // Draw text
-        let text_pos = Pos2 {
-            x: center.x,
-            y: center.y,
-        }; // these offsets are just for example, you may have to adjust these
-        painter.text(
-            text_pos,
-            Align2::CENTER_CENTER,
-            self.measurement,
-            TextStyle::Small.resolve(&ctx.style()),
-            COLOR_SLATE_100,
-        );
+
 
         let label_pos = Pos2 {
             x: center.x,

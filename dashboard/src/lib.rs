@@ -75,22 +75,22 @@ impl Application {
             req.push(
                 0b10000000
                     | match idx {
-                        0 => (5 * 4)    + well.wavelength.to_u8(),
-                        1 => (6 * 4)    + well.wavelength.to_u8(),
-                        2 =>      4     + well.wavelength.to_u8(),
-                        4 => (2 * 4)    + well.wavelength.to_u8(),
-                        5 => (4 * 4)    + well.wavelength.to_u8(),
-                        6 => (7 * 4)    + well.wavelength.to_u8(),
-                        7 =>              well.wavelength.to_u8(),
-                        9 => (3 * 4)    + well.wavelength.to_u8(),
-                        10 => (9 * 4)   + well.wavelength.to_u8(),
-                        11 => (10 * 4)  + well.wavelength.to_u8(),
+                        0 =>  (15 * 4)  + well.wavelength.to_u8(),
+                        2 =>  (14 * 4)  + well.wavelength.to_u8(),
+                        3 =>  (3 * 4)   + well.wavelength.to_u8(),
+                        4 =>  (2 * 4)   + well.wavelength.to_u8(),
+                        6 =>  (12 * 4)  + well.wavelength.to_u8(),
+                        10 => (11 * 4)  + well.wavelength.to_u8(),
                         12 => (13 * 4)  + well.wavelength.to_u8(),
-                        14 => (14 * 4)  + well.wavelength.to_u8(),
-                        18 => (12 * 4)  + well.wavelength.to_u8(),
+                        13 => (0 * 4)   + well.wavelength.to_u8(),
+                        14 => (1 * 4)   + well.wavelength.to_u8(),
+                        17 => (10 * 4)  + well.wavelength.to_u8(),
+                        18 => (7 * 4)   + well.wavelength.to_u8(),
+                        19 => (6 * 4)   + well.wavelength.to_u8(),
                         20 => (8 * 4)   + well.wavelength.to_u8(),
-                        22 => (11 * 4)  + well.wavelength.to_u8(),
-                        24 => (15 * 4)  + well.wavelength.to_u8(),
+                        22 => (9 * 4)   + well.wavelength.to_u8(),
+                        23 => (4 * 4)   + well.wavelength.to_u8(),
+                        24 => (5 * 4)   + well.wavelength.to_u8(),
                         _ => 0b00000000,
                     },
             );
@@ -133,7 +133,7 @@ impl eframe::App for Application {
                 "{},{},{},",
                 self.sequence[self.current_plate].brightness,
                 self.sequence[self.current_plate].wavelength,
-                self.sim_start.elapsed().as_secs()
+                self.sequence[self.current_plate].duration
             )
             .expect("Unable to write brightness and wavelength.");
             writeln!(
@@ -271,26 +271,43 @@ impl eframe::App for Application {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_enabled_ui(!self.is_simulating, |ui| {
                 ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        for (idx, plate) in self.sequence.iter().enumerate() {
-                            ui.selectable_value(
-                                &mut self.current_plate,
-                                idx,
-                                format!("Well Pattern {}\nsequence duration: {}s\nwavelength: {}\nbrightness: {}%", idx + 1, plate.duration, plate.wavelength, plate.brightness),
-                            );
-                        }
+                    ui.vertical(|ui|{
                         if ui.button("New Pattern").clicked() {
                             self.sequence.push(MicroPlate::default());
                             self.current_plate = self.sequence.len() - 1;
                         }
-                    });
-                    ui.vertical(|ui| {
-                        ui.add_enabled_ui(self.sequence.len() > 1, |ui| {
-                            if ui.button("Remove Plate").clicked() {
-                                self.sequence.remove(self.current_plate);
-                                if self.current_plate != 0 {
-                                    self.current_plate -= 1;
+
+                        ui.add_space(5.0);
+
+                        egui::ScrollArea::vertical()
+                            .min_scrolled_height(325.0 + 80.0)
+                            .show(ui, |ui|{
+                                for (idx, plate) in self.sequence.iter().enumerate() {
+                                    ui.selectable_value(
+                                        &mut self.current_plate,
+                                        idx,
+                                        format!("Well Pattern {}\nsequence duration: {}s\nwavelength: {}\nbrightness: {}%", idx + 1, plate.duration, plate.wavelength, plate.brightness),
+                                    );
                                 }
+                            });
+                    });
+
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.add_enabled_ui(self.sequence.len() > 1, |ui| {
+                                if ui.button("Remove Pattern").clicked() {
+                                    self.sequence.remove(self.current_plate);
+                                    if self.current_plate != 0 {
+                                        self.current_plate -= 1;
+                                    }
+                                }
+                            });
+                            if ui.button("Deselect All").clicked() {
+                                self.sequence[self.current_plate].wells.iter_mut().for_each(|v| v.led_on = false);
+                            }
+
+                            if ui.button("Select All").clicked() {
+                                self.sequence[self.current_plate].wells.iter_mut().for_each(|v| v.led_on = true);
                             }
                         });
 

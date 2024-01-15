@@ -7,8 +7,8 @@ fn main() -> Result<(), eframe::Error> {
         transparent: true,
         follow_system_theme: false,
         default_theme: Theme::Dark,
-        min_window_size: Some(egui::vec2(650.0, 700.0)),
-        initial_window_size: Some(egui::vec2(650.0, 700.0)),
+        min_window_size: Some(egui::vec2(900.0, 720.0)),
+        initial_window_size: Some(egui::vec2(900.0, 720.0)),
         resizable: false,
         ..Default::default()
     };
